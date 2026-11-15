@@ -59,9 +59,9 @@ include 'inc/header.php'; ?>
     <h3>مدیریت ثبت‌نام جشنواره حرکت</h3>
     <p>وضعیت فعلی: 
         <?php if ($s['festival_status']): ?>
-            <strong style="color:green;">✅ ثبت‌نام باز است</strong>
+            <strong style="color:#059669;">ثبت‌نام باز است</strong>
         <?php else: ?>
-            <strong style="color:red;">❌ ثبت‌نام بسته است</strong>
+            <strong style="color:#dc2626;">ثبت‌نام بسته است</strong>
         <?php endif; ?>
     </p>
     <form method="POST" style="margin-top:15px;">

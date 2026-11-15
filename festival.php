@@ -4,8 +4,13 @@ include 'includes/header.php';
 
 // بررسی وضعیت باز یا بسته بودن ثبت نام
 if ($settings['festival_status'] == 0) {
-    echo "<div class='container' style='text-align:center; padding: 100px 0;'>
-            <h2 style='color:red;'>مهلت ثبت‌نام در کادر اجرایی جشنواره حرکت به پایان رسیده است.</h2>
+    echo "<div class='page-container container'>
+            <div class='festival-closed-box'>
+                " . svgIcon('close', 'closed-icon', 48) . "
+                <h2>مهلت ثبت‌نام در کادر اجرایی جشنواره حرکت به پایان رسیده است.</h2>
+                <p>جهت اطلاع از دوره‌های آتی اخبار سایت را دنبال کنید.</p>
+                <a href='index.php' class='btn-pill-dark' style='margin-top:20px; display:inline-flex;'>بازگشت به صفحه اصلی</a>
+            </div>
           </div>";
     include 'includes/footer.php';
     exit;
@@ -13,36 +18,57 @@ if ($settings['festival_status'] == 0) {
 
 // ذخیره فرم در دیتابیس
 $message = '';
+$isSuccess = false;
 if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['submit_reg'])) {
-    $name = $_POST['full_name'];
-    $student_id = $_POST['student_id'];
-    $phone = $_POST['phone'];
+    $name = trim($_POST['full_name'] ?? '');
+    $student_id = trim($_POST['student_id'] ?? '');
+    $phone = trim($_POST['phone'] ?? '');
     
-    $stmt = $pdo->prepare("INSERT INTO festival_registrations (full_name, student_id, phone) VALUES (?, ?, ?)");
-    if ($stmt->execute([$name, $student_id, $phone])) {
-        $message = "<p style='color:green; text-align:center;'>ثبت نام شما با موفقیت انجام شد!</p>";
+    if ($name && $student_id && $phone) {
+        $stmt = $pdo->prepare("INSERT INTO festival_registrations (full_name, student_id, phone) VALUES (?, ?, ?)");
+        if ($stmt->execute([$name, $student_id, $phone])) {
+            $isSuccess = true;
+            $message = "ثبت‌نام شما با موفقیت در سامانه ذخیره شد. به‌زودی با شما تماس گرفته خواهد شد.";
+        }
+    } else {
+        $message = "لطفاً تمامی فیلدهای الزامی را تکمیل نمایید.";
     }
 }
 ?>
 
-<section class="festival-form container" style="max-width: 600px; margin: 50px auto; background:#fff; padding:30px; border-radius:15px; box-shadow:0 10px 30px rgba(0,0,0,0.05);">
-    <h2 style="text-align:center; margin-bottom:20px;">ثبت‌نام کادر اجرایی جشنواره حرکت</h2>
-    <?= $message ?>
-    <form method="POST" action="">
-        <div style="margin-bottom: 15px;">
-            <label>نام و نام خانوادگی:</label>
-            <input type="text" name="full_name" required style="width:100%; padding:10px; border:1px solid #ddd; border-radius:8px;">
+<section class="page-container container">
+    <div class="festival-form-card">
+        <div class="section-title-wrap" style="text-align:center; margin-bottom:25px;">
+            <h1 class="page-title" style="display:inline-block;">ثبت‌نام کادر اجرایی جشنواره حرکت</h1>
+            <div class="title-underline-center"></div>
         </div>
-        <div style="margin-bottom: 15px;">
-            <label>شماره دانشجویی:</label>
-            <input type="text" name="student_id" required style="width:100%; padding:10px; border:1px solid #ddd; border-radius:8px;">
-        </div>
-        <div style="margin-bottom: 15px;">
-            <label>شماره تماس:</label>
-            <input type="text" name="phone" required style="width:100%; padding:10px; border:1px solid #ddd; border-radius:8px;">
-        </div>
-        <button type="submit" name="submit_reg" class="btn-primary" style="width:100%; padding:12px; border:none; cursor:pointer; text-align:center;">ثبت اطلاعات</button>
-    </form>
+
+        <?php if ($message): ?>
+            <div class="alert-box <?= $isSuccess ? 'alert-success' : 'alert-danger' ?>">
+                <?= $isSuccess ? svgIcon('check', '', 18) : svgIcon('close', '', 18) ?>
+                <span><?= e($message) ?></span>
+            </div>
+        <?php endif; ?>
+
+        <form method="POST" action="" class="form-grid">
+            <div class="form-group">
+                <label for="full_name">نام و نام خانوادگی:</label>
+                <input type="text" id="full_name" name="full_name" required placeholder="مثال: امیرحسین رضایی">
+            </div>
+            <div class="form-group">
+                <label for="student_id">شماره دانشجویی:</label>
+                <input type="text" id="student_id" name="student_id" required placeholder="مثال: 99123456">
+            </div>
+            <div class="form-group">
+                <label for="phone">شماره تماس (همراه):</label>
+                <input type="tel" id="phone" name="phone" required placeholder="مثال: 09123456789">
+            </div>
+            <button type="submit" name="submit_reg" class="btn-pill-dark btn-submit-full">
+                <span>ثبت اطلاعات در سامانه</span>
+                <?= svgIcon('check', '', 16) ?>
+            </button>
+        </form>
+    </div>
 </section>
 
 <?php include 'includes/footer.php'; ?>

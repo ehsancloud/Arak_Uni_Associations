@@ -30,7 +30,7 @@ include 'inc/header.php'; ?>
 <div class="admin-header">
     <h2>ثبت‌نامی‌های کادر اجرایی جشنواره حرکت</h2>
     <div>
-        <a href="?export=1" class="btn btn-success">📥 خروجی اکسل</a>
+        <a href="?export=1" class="btn btn-success">خروجی فایل اکسل (CSV)</a>
         <a href="settings.php" class="btn">تنظیمات ثبت‌نام</a>
     </div>
 </div>
@@ -39,9 +39,9 @@ include 'inc/header.php'; ?>
     <h3>
         وضعیت فعلی فرم ثبت‌نام: 
         <?php if ($status): ?>
-            <span style="color:green;">✅ باز</span>
+            <span style="color:#059669;">فعال و باز</span>
         <?php else: ?>
-            <span style="color:red;">❌ بسته</span>
+            <span style="color:#dc2626;">بسته شده</span>
         <?php endif; ?>
     </h3>
     <p>برای تغییر وضعیت ثبت‌نام، به صفحه <a href="settings.php">تنظیمات</a> مراجعه کنید.</p>

@@ -2,52 +2,96 @@
 $page = 'home';
 include 'includes/header.php';
 
-$latest = $pdo->query("SELECT * FROM news ORDER BY created_at DESC, id DESC LIMIT 5")->fetchAll();
-$assocs = $pdo->query("SELECT * FROM associations ORDER BY id ASC LIMIT 10")->fetchAll();
+try {
+    $latest = $pdo->query("SELECT * FROM news ORDER BY created_at DESC, id DESC LIMIT 5")->fetchAll();
+} catch (Exception $e) {
+    $latest = [];
+}
+
+try {
+    $assocs = $pdo->query("SELECT * FROM associations ORDER BY id ASC LIMIT 12")->fetchAll();
+} catch (Exception $e) {
+    $assocs = [];
+}
 ?>
 
-<section class="hero-section" style="background-image: url('assets/images/main-hero.jpg');">
-    <div class="container">
-        <div class="hero-text">
-            <h2>سامانه خبری انجمن‌های علمی<br>دانشگاه اراک</h2>
-            <p>با ما در جریان تازه‌ترین اخبار و رویدادهای علمی دانشگاه باشید.</p>
+<!-- Hero Section -->
+<section class="hero-section">
+    <div class="hero-bg-layer" style="background-image: url('assets/images/main-hero.jpg');"></div>
+    <div class="hero-overlay"></div>
+    <div class="container hero-container">
+        <div class="hero-content">
+            <h1 class="hero-title">
+                سامانه خبری انجمن‌های علمی<br>
+                <span class="hero-title-sub">دانشگاه اراک</span>
+            </h1>
+            <p class="hero-desc">با ما در جریان تازه‌ترین اخبار و رویدادهای علمی دانشگاه باشید.</p>
+            <div class="hero-accent-dash"></div>
         </div>
     </div>
 </section>
 
+<!-- News Ticker -->
 <?= renderTicker($pdo, 0) ?>
 
-<section class="latest-news container">
-    <div class="section-header">
-        <h3>جدیدترین اخبار</h3>
-        <a href="news.php" class="btn-primary">مشاهده همه اخبار ←</a>
+<!-- Latest News Section (Asymmetrical Grid) -->
+<section class="latest-news-section container">
+    <div class="section-top-bar">
+        <div class="section-title-wrap">
+            <h2 class="section-title">جدیدترین اخبار</h2>
+            <div class="title-underline"></div>
+        </div>
+        <a href="news.php" class="btn-pill-dark">
+            <span>مشاهده همه اخبار</span>
+            <?= svgIcon('arrow-left', 'btn-icon-arrow', 15) ?>
+        </a>
     </div>
     
     <?php if ($latest): ?>
-    <div class="news-grid">
-        <?= newsCard($latest[0], true) ?>
-        <div class="small-news-wrapper">
+    <div class="featured-news-layout">
+        <!-- Big Card on Right in RTL -->
+        <div class="featured-col-big">
+            <?= newsCard($latest[0], true) ?>
+        </div>
+        <!-- 2x2 Small Grid on Left in RTL -->
+        <div class="featured-col-grid">
             <?php for ($i = 1; $i < count($latest); $i++): ?>
-                <?= newsCard($latest[$i]) ?>
+                <?= newsCard($latest[$i], false) ?>
             <?php endfor; ?>
         </div>
     </div>
     <?php else: ?>
-        <div class="empty-box">هنوز خبری ثبت نشده است.</div>
+        <div class="empty-state-box">
+            <?= svgIcon('building', 'empty-icon', 48) ?>
+            <p>هنوز خبری در سامانه ثبت نشده است.</p>
+        </div>
     <?php endif; ?>
 </section>
 
-<section class="associations-list container">
-    <div class="section-header">
-        <h3>انجمن‌های علمی دانشگاه اراک</h3>
-        <a href="associations.php" class="btn-primary">مشاهده همه انجمن‌ها ←</a>
-    </div>
-    <div class="associations-grid">
-        <?php if ($assocs): foreach ($assocs as $a): ?>
-            <?= assocCard($a) ?>
-        <?php endforeach; else: ?>
-            <div class="empty-box">هنوز انجمنی ثبت نشده است.</div>
-        <?php endif; ?>
+<!-- Associations Section (Soft rounded box with white cards) -->
+<section class="associations-section container">
+    <div class="associations-inner-box">
+        <div class="section-top-bar">
+            <div class="section-title-wrap">
+                <h2 class="section-title">انجمن‌های علمی دانشگاه اراک</h2>
+                <div class="title-underline"></div>
+            </div>
+            <a href="associations.php" class="btn-pill-dark">
+                <span>مشاهده همه انجمن‌ها</span>
+                <?= svgIcon('arrow-left', 'btn-icon-arrow', 15) ?>
+            </a>
+        </div>
+
+        <div class="associations-grid-row">
+            <?php if ($assocs): foreach ($assocs as $a): ?>
+                <?= assocCard($a) ?>
+            <?php endforeach; else: ?>
+                <div class="empty-state-box">
+                    <?= svgIcon('building', 'empty-icon', 48) ?>
+                    <p>هنوز انجمنی ثبت نشده است.</p>
+                </div>
+            <?php endif; ?>
+        </div>
     </div>
 </section>
 

@@ -90,7 +90,7 @@ include 'inc/header.php'; ?>
                 <td><?= e($t['text']) ?></td>
                 <td><?= $t['association_id'] ? e($t['assoc_name']) : 'صفحه اصلی' ?></td>
                 <td><?= (int)$t['sort_order'] ?></td>
-                <td><?= $t['active'] ? '✅ فعال' : '⏸ غیرفعال' ?></td>
+                <td><?= $t['active'] ? '<span style="color:#059669; font-weight:600;">فعال</span>' : '<span style="color:#94a3b8;">غیرفعال</span>' ?></td>
                 <td>
                     <a href="?toggle=<?= $t['id'] ?>" class="btn btn-success"><?= $t['active'] ? 'غیرفعال' : 'فعال' ?></a>
                     <a href="?edit=<?= $t['id'] ?>" class="btn">ویرایش</a>
