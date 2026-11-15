@@ -8,7 +8,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const tickerToggleBtn = document.getElementById('tickerToggleBtn');
     
     if (tickerTrack) {
-        // برای لوپ بی‌نهایت یکپارچه و بدون پرش، آیتم‌ها را دو برابر می‌کنیم
+        // برای لوپ بی‌نهایت یکپارچه و بدون پرش، محتوا را تکرار می‌کنیم
         const rawContent = tickerTrack.innerHTML;
         tickerTrack.innerHTML = rawContent + '<span class="ticker-sep">|</span>' + rawContent;
 
@@ -65,14 +65,13 @@ document.addEventListener('DOMContentLoaded', () => {
         mobileDrawerOverlay.addEventListener('click', closeMobileMenu);
     }
 
-    // بستن منو با فشردن دکمه Escape کیبورد
     document.addEventListener('keydown', (e) => {
         if (e.key === 'Escape') {
             closeMobileMenu();
         }
     });
 
-    // ---------- ۳. افکت هدر هنگام اسکرول (Elevation on scroll) ----------
+    // ---------- ۳. افکت هدر هنگام اسکرول ----------
     const mainHeader = document.getElementById('mainHeader');
     if (mainHeader) {
         window.addEventListener('scroll', () => {
@@ -82,33 +81,6 @@ document.addEventListener('DOMContentLoaded', () => {
                 mainHeader.style.boxShadow = '0 4px 20px rgba(14, 31, 61, 0.04)';
             }
         }, { passive: true });
-    }
-
-    // ---------- ۴. انیمیشن نرم ورود کارت‌ها هنگام اسکرول (Fade-in Observer) ----------
-    if ('IntersectionObserver' in window) {
-        const observerOptions = {
-            root: null,
-            rootMargin: '0px',
-            threshold: 0.1
-        };
-
-        const revealObserver = new IntersectionObserver((entries, observer) => {
-            entries.forEach(entry => {
-                if (entry.isIntersecting) {
-                    entry.target.style.opacity = '1';
-                    entry.target.style.transform = 'translateY(0)';
-                    observer.unobserve(entry.target);
-                }
-            });
-        }, observerOptions);
-
-        const animatedElements = document.querySelectorAll('.news-card, .assoc-card, .member-card');
-        animatedElements.forEach((el, index) => {
-            el.style.opacity = '0';
-            el.style.transform = 'translateY(18px)';
-            el.style.transition = `opacity 0.5s ease ${(index % 6) * 0.06}s, transform 0.5s cubic-bezier(0.16, 1, 0.3, 1) ${(index % 6) * 0.06}s`;
-            revealObserver.observe(el);
-        });
     }
 
 });
