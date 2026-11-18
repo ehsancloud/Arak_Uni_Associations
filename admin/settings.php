@@ -8,10 +8,9 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     // تغییر تنظیمات عمومی
     if (isset($_POST['save_settings'])) {
         $title = $_POST['site_title'];
-        $font = $_POST['font_family'];
         $about = $_POST['about_text'] ?? '';
-        $stmt = $pdo->prepare("UPDATE settings SET site_title=?, font_family=?, about_text=? WHERE id=1");
-        $stmt->execute([$title, $font, $about]);
+        $stmt = $pdo->prepare("UPDATE settings SET site_title=?, about_text=? WHERE id=1");
+        $stmt->execute([$title, $about]);
         $msg = '<div class="alert alert-success">تنظیمات ذخیره شد.</div>';
     }
     // تغییر وضعیت جشنواره
@@ -35,17 +34,11 @@ include 'inc/header.php'; ?>
     <form method="POST">
         <div class="form-group">
             <label>عنوان سایت:</label>
-            <input type="text" name="site_title" value="<?= htmlspecialchars($s['site_title']) ?>">
+            <input type="text" name="site_title" value="<?= htmlspecialchars($s['site_title'] ?? '') ?>">
         </div>
         <div class="form-group">
-            <label>فونت سایت:</label>
-            <select name="font_family">
-                <option value="Vazirmatn" <?= $s['font_family']=='Vazirmatn'?'selected':'' ?>>وزیر متن</option>
-                <option value="IRANSans" <?= $s['font_family']=='IRANSans'?'selected':'' ?>>ایران سنس</option>
-                <option value="Yekan" <?= $s['font_family']=='Yekan'?'selected':'' ?>>یکان</option>
-                <option value="Sahel" <?= $s['font_family']=='Sahel'?'selected':'' ?>>ساحل</option>
-                <option value="Tahoma" <?= $s['font_family']=='Tahoma'?'selected':'' ?>>تاهوما</option>
-            </select>
+            <label>فونت رسمی سایت:</label>
+            <input type="text" value="یکان بخ (Yekan Bakh FaNum)" disabled style="background:#f1f5f9; color:#64748b;">
         </div>
         <div class="form-group">
             <label>متن صفحه «درباره ما»:</label>
@@ -58,16 +51,16 @@ include 'inc/header.php'; ?>
 <div class="admin-card">
     <h3>مدیریت ثبت‌نام جشنواره حرکت</h3>
     <p>وضعیت فعلی: 
-        <?php if ($s['festival_status']): ?>
+        <?php if (!empty($s['festival_status'])): ?>
             <strong style="color:#059669;">ثبت‌نام باز است</strong>
         <?php else: ?>
             <strong style="color:#dc2626;">ثبت‌نام بسته است</strong>
         <?php endif; ?>
     </p>
     <form method="POST" style="margin-top:15px;">
-        <input type="hidden" name="current_status" value="<?= $s['festival_status'] ?>">
-        <button type="submit" name="toggle_festival" class="btn <?= $s['festival_status'] ? 'btn-danger' : 'btn-success' ?>">
-            <?= $s['festival_status'] ? 'توقف ثبت‌نام' : 'شروع مجدد ثبت‌نام' ?>
+        <input type="hidden" name="current_status" value="<?= $s['festival_status'] ?? 0 ?>">
+        <button type="submit" name="toggle_festival" class="btn <?= (!empty($s['festival_status'])) ? 'btn-danger' : 'btn-success' ?>">
+            <?= (!empty($s['festival_status'])) ? 'توقف ثبت‌نام' : 'شروع مجدد ثبت‌نام' ?>
         </button>
     </form>
 </div>

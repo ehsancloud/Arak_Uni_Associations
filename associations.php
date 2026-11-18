@@ -12,7 +12,6 @@ try {
     <div class="page-header-box">
         <div class="section-title-wrap">
             <h1 class="page-title">انجمن‌های علمی دانشگاه اراک</h1>
-            <div class="title-underline"></div>
         </div>
         <p class="search-result-hint"><?= count($list) ?> انجمن فعال علمی و دانشجویی</p>
     </div>

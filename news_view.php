@@ -10,7 +10,7 @@ $n = $st->fetch();
 if (!$n) {
     echo "<div class='container' style='padding:120px 20px; text-align:center;'>
             <h2>خبر مورد نظر یافت نشد!</h2>
-            <a href='news.php' class='btn-pill-dark' style='display:inline-flex; margin-top:20px;'>
+            <a href='news.php' class='btn-primary' style='display:inline-flex; margin-top:20px;'>
                 " . svgIcon('arrow-left', '', 16) . " بازگشت به لیست اخبار
             </a>
           </div>";
@@ -55,7 +55,7 @@ $related = $rel->fetchAll();
             </div>
 
             <div class="news-single-footer">
-                <a href="news.php" class="btn-pill-dark">
+                <a href="news.php" class="btn-primary">
                     <?= svgIcon('arrow-left', '', 15) ?>
                     <span>بازگشت به همه اخبار</span>
                 </a>
@@ -69,7 +69,6 @@ $related = $rel->fetchAll();
     <div class="section-top-bar">
         <div class="section-title-wrap">
             <h2 class="section-title">اخبار مرتبط</h2>
-            <div class="title-underline"></div>
         </div>
     </div>
     <div class="news-cards-grid">

@@ -9,6 +9,16 @@ try {
 }
 
 try {
+    $upcomingEvents = $pdo->query("SELECT e.*, a.name AS assoc_name 
+                                    FROM events e 
+                                    LEFT JOIN associations a ON e.association_id = a.id 
+                                    WHERE e.is_published = 1 AND e.starts_at >= NOW() 
+                                    ORDER BY e.starts_at ASC LIMIT 4")->fetchAll();
+} catch (Exception $e) {
+    $upcomingEvents = [];
+}
+
+try {
     $assocs = $pdo->query("SELECT * FROM associations ORDER BY id ASC LIMIT 12")->fetchAll();
 } catch (Exception $e) {
     $assocs = [];
@@ -26,7 +36,20 @@ try {
                 <span class="hero-title-sub">دانشگاه اراک</span>
             </h1>
             <p class="hero-desc">با ما در جریان تازه‌ترین اخبار و رویدادهای علمی دانشگاه باشید.</p>
-            <div class="hero-accent-dash"></div>
+            <div class="hero-actions">
+                <a href="membership.php" class="btn-primary">
+                    <?= svgIcon('user-plus', '', 16) ?>
+                    <span>عضویت در انجمن</span>
+                </a>
+                <a href="events.php" class="btn-secondary">
+                    <?= svgIcon('calendar', '', 16) ?>
+                    <span>مشاهده رویدادها</span>
+                </a>
+                <a href="cooperation.php" class="btn-secondary">
+                    <?= svgIcon('send', '', 15) ?>
+                    <span>ثبت درخواست همکاری</span>
+                </a>
+            </div>
         </div>
     </div>
 </section>
@@ -34,14 +57,61 @@ try {
 <!-- News Ticker -->
 <?= renderTicker($pdo, 0) ?>
 
+<?php if (!empty($upcomingEvents)): ?>
+<!-- Upcoming Events Section -->
+<section class="upcoming-events-section container">
+    <div class="section-top-bar">
+        <div class="section-title-wrap">
+            <h2 class="section-title">تقویم رویدادهای پیش‌رو</h2>
+        </div>
+        <a href="events.php" class="btn-primary">
+            <span>همه رویدادها</span>
+            <?= svgIcon('arrow-left', 'btn-icon-arrow', 15) ?>
+        </a>
+    </div>
+
+    <div class="home-events-grid">
+        <?php foreach ($upcomingEvents as $ev): 
+            $dateObj = strtotime($ev['starts_at']);
+            $jalali = gregorian_to_jalali((int)date('Y', $dateObj), (int)date('n', $dateObj), (int)date('j', $dateObj));
+            $months = ['','فروردین','اردیبهشت','خرداد','تیر','مرداد','شهریور','مهر','آبان','آذر','دی','بهمن','اسفند'];
+            $dayNum = strtr((string)$jalali[2], ['0'=>'۰','1'=>'۱','2'=>'۲','3'=>'۳','4'=>'۴','5'=>'۵','6'=>'۶','7'=>'۷','8'=>'۸','9'=>'۹']);
+            $monthName = $months[$jalali[1]];
+        ?>
+            <article class="home-event-card">
+                <div class="home-event-badge">
+                    <span class="home-event-day"><?= $dayNum ?></span>
+                    <span class="home-event-month"><?= $monthName ?></span>
+                </div>
+                <div class="home-event-info">
+                    <span class="home-event-assoc"><?= e($ev['assoc_name'] ?: 'دانشگاه اراک (عمومی)') ?></span>
+                    <h3 class="home-event-title">
+                        <a href="event.php?id=<?= (int)$ev['id'] ?>"><?= e($ev['title']) ?></a>
+                    </h3>
+                    <?php if (!empty($ev['location'])): ?>
+                        <div class="home-event-meta">
+                            <?= svgIcon('building', '', 13) ?>
+                            <span><?= e($ev['location']) ?></span>
+                        </div>
+                    <?php endif; ?>
+                    <a href="event.php?id=<?= (int)$ev['id'] ?>" class="home-event-action">
+                        <span>مشاهده و ثبت‌نام</span>
+                        <?= svgIcon('arrow-left', '', 12) ?>
+                    </a>
+                </div>
+            </article>
+        <?php endforeach; ?>
+    </div>
+</section>
+<?php endif; ?>
+
 <!-- Latest News Section (Asymmetrical Grid) -->
 <section class="latest-news-section container">
     <div class="section-top-bar">
         <div class="section-title-wrap">
             <h2 class="section-title">جدیدترین اخبار</h2>
-            <div class="title-underline"></div>
         </div>
-        <a href="news.php" class="btn-pill-dark">
+        <a href="news.php" class="btn-primary">
             <span>مشاهده همه اخبار</span>
             <?= svgIcon('arrow-left', 'btn-icon-arrow', 15) ?>
         </a>
@@ -74,9 +144,8 @@ try {
         <div class="section-top-bar">
             <div class="section-title-wrap">
                 <h2 class="section-title">انجمن‌های علمی دانشگاه اراک</h2>
-                <div class="title-underline"></div>
             </div>
-            <a href="associations.php" class="btn-pill-dark">
+            <a href="associations.php" class="btn-primary">
                 <span>مشاهده همه انجمن‌ها</span>
                 <?= svgIcon('arrow-left', 'btn-icon-arrow', 15) ?>
             </a>

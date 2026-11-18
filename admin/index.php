@@ -50,21 +50,81 @@ if (!isset($_SESSION['admin_id'])): ?>
     </div>
 <?php else: 
     // داشبورد
-    $assoc_count = $pdo->query("SELECT COUNT(*) FROM associations")->fetchColumn();
-    $news_count = $pdo->query("SELECT COUNT(*) FROM news")->fetchColumn();
-    $member_count = $pdo->query("SELECT COUNT(*) FROM members")->fetchColumn();
-    $reg_count = $pdo->query("SELECT COUNT(*) FROM festival_registrations")->fetchColumn();
+    try {
+        $assoc_count = (int)$pdo->query("SELECT COUNT(*) FROM associations")->fetchColumn();
+        $events_count = (int)$pdo->query("SELECT COUNT(*) FROM events")->fetchColumn();
+        $submissions_count = (int)$pdo->query("SELECT COUNT(*) FROM form_submissions")->fetchColumn();
+        $active_forms_count = (int)$pdo->query("SELECT COUNT(*) FROM forms WHERE is_open = 1")->fetchColumn();
+        $news_count = (int)$pdo->query("SELECT COUNT(*) FROM news")->fetchColumn();
+        $publications_count = (int)$pdo->query("SELECT COUNT(*) FROM publications")->fetchColumn();
+
+        $latest_submissions = $pdo->query("SELECT s.*, f.title AS form_title 
+                                           FROM form_submissions s 
+                                           LEFT JOIN forms f ON s.form_id = f.id 
+                                           ORDER BY s.id DESC LIMIT 5")->fetchAll();
+    } catch (Exception $e) {
+        $assoc_count = 0;
+        $events_count = 0;
+        $submissions_count = 0;
+        $active_forms_count = 0;
+        $news_count = 0;
+        $publications_count = 0;
+        $latest_submissions = [];
+    }
 ?>
     <div class="admin-header">
         <h2>داشبورد مدیریت</h2>
         <div>خوش آمدید، <?= htmlspecialchars($_SESSION['admin_user']) ?></div>
     </div>
     
-    <div class="stat-grid">
-        <div class="stat-box"><h4>تعداد انجمن‌ها</h4><div class="num"><?= $assoc_count ?></div></div>
-        <div class="stat-box"><h4>تعداد اخبار</h4><div class="num"><?= $news_count ?></div></div>
-        <div class="stat-box"><h4>تعداد اعضا</h4><div class="num"><?= $member_count ?></div></div>
-        <div class="stat-box"><h4>ثبت‌نامی جشنواره</h4><div class="num"><?= $reg_count ?></div></div>
+    <div class="stat-grid" style="grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));">
+        <div class="stat-box"><h4>انجمن‌های علمی</h4><div class="num"><?= $assoc_count ?></div></div>
+        <div class="stat-box"><h4>رویدادها</h4><div class="num"><?= $events_count ?></div></div>
+        <div class="stat-box"><h4>کل ثبت‌نامی‌ها</h4><div class="num"><?= $submissions_count ?></div></div>
+        <div class="stat-box"><h4>فرم‌های فعال</h4><div class="num"><?= $active_forms_count ?></div></div>
+        <div class="stat-box"><h4>اخبار و اطلاعیه‌ها</h4><div class="num"><?= $news_count ?></div></div>
+        <div class="stat-box"><h4>نشریات علمی</h4><div class="num"><?= $publications_count ?></div></div>
+    </div>
+
+    <div class="admin-card" style="margin-top: 25px;">
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px;">
+            <h3 style="margin:0;">آخرین درخواست‌ها و ثبت‌نام‌ها</h3>
+            <a href="submissions.php" class="btn btn-sm btn-secondary">مشاهده همه</a>
+        </div>
+        <?php if (!empty($latest_submissions)): ?>
+            <table>
+                <thead>
+                    <tr>
+                        <th>شماره</th>
+                        <th>عنوان فرم</th>
+                        <th>تاریخ ثبت</th>
+                        <th>وضعیت</th>
+                        <th>عملیات</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <?php foreach ($latest_submissions as $sub): 
+                        $badgeClass = 'badge-secondary';
+                        $statusFa = 'جدید';
+                        if ($sub['status'] === 'approved') { $badgeClass = 'badge-success'; $statusFa = 'تأیید شده'; }
+                        elseif ($sub['status'] === 'rejected') { $badgeClass = 'badge-danger'; $statusFa = 'رد شده'; }
+                        elseif ($sub['status'] === 'pending') { $badgeClass = 'badge-warning'; $statusFa = 'در حال بررسی'; }
+                    ?>
+                        <tr>
+                            <td>#<?= (int)$sub['id'] ?></td>
+                            <td><?= htmlspecialchars($sub['form_title'] ?? 'فرم ناشناخته') ?></td>
+                            <td><?= formatDate($sub['created_at']) ?></td>
+                            <td><span class="badge <?= $badgeClass ?>"><?= $statusFa ?></span></td>
+                            <td>
+                                <a href="submissions.php?form_id=<?= (int)$sub['form_id'] ?>&view=<?= (int)$sub['id'] ?>" class="btn btn-sm btn-secondary">مشاهده جزئیات</a>
+                            </td>
+                        </tr>
+                    <?php endforeach; ?>
+                </tbody>
+            </table>
+        <?php else: ?>
+            <p style="color:#64748b; font-size:13.5px;">تاکنون درخواستی ثبت نشده است.</p>
+        <?php endif; ?>
     </div>
 <?php endif;
 include 'inc/footer.php'; ?>

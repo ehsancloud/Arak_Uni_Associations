@@ -44,7 +44,10 @@ include 'inc/header.php'; ?>
             <span style="color:#dc2626;">بسته شده</span>
         <?php endif; ?>
     </h3>
-    <p>برای تغییر وضعیت ثبت‌نام، به صفحه <a href="settings.php">تنظیمات</a> مراجعه کنید.</p>
+    <p>برای تغییر وضعیت ثبت‌نام، به صفحه <a href="settings.php">تنظیمات</a> یا <a href="forms.php?edit=1">ویرایش فرم جشنواره</a> مراجعه کنید.</p>
+    <div style="margin-top:10px; background:#eff6ff; padding:10px 14px; border-radius:6px; border:1px solid #bfdbfe; font-size:13px; color:#1e40af;">
+        همچنین می‌توانید از بخش جدید <a href="submissions.php?form_id=1" style="font-weight:700; text-decoration:underline;">مدیریت ثبت‌نامی‌ها</a> پاسخ‌های تفکیک‌شده را مدیریت کنید.
+    </div>
 </div>
 
 <div class="admin-card">

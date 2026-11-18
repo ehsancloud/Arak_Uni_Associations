@@ -7,7 +7,6 @@ include 'includes/header.php';
     <div class="page-header-box">
         <div class="section-title-wrap">
             <h1 class="page-title">درباره سامانه انجمن‌های علمی</h1>
-            <div class="title-underline"></div>
         </div>
     </div>
 

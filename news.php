@@ -32,7 +32,6 @@ function pageUrl($n) { $g = $_GET; $g['p'] = $n; return '?' . http_build_query($
     <div class="page-header-box">
         <div class="section-title-wrap">
             <h1 class="page-title">اخبار و رویدادهای دانشگاه</h1>
-            <div class="title-underline"></div>
         </div>
         <?php if ($q !== ''): ?>
             <p class="search-result-hint">نتایج جستجو برای عبارت «<?= e($q) ?>» — <?= $total ?> خبر یافت شد.</p>
@@ -53,7 +52,7 @@ function pageUrl($n) { $g = $_GET; $g['p'] = $n; return '?' . http_build_query($
                 <?php endforeach; ?>
             </select>
         </div>
-        <button type="submit" class="btn-pill-dark btn-filter-submit">
+        <button type="submit" class="btn-primary btn-filter-submit">
             <span>اعمال فیلتر</span>
         </button>
     </form>

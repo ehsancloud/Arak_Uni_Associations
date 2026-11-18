@@ -5,9 +5,11 @@ $settings = getSettings($pdo);
 $page = $page ?? '';
 $nav = [
     'home'         => ['index.php', 'صفحه اصلی'],
-    'news'         => ['news.php', 'اخبار'],
     'associations' => ['associations.php', 'انجمن‌ها'],
-    'festival'     => ['festival.php', 'جشنواره حرکت'],
+    'events'       => ['events.php', 'رویدادها'],
+    'membership'   => ['membership.php', 'عضویت'],
+    'news'         => ['news.php', 'اخبار'],
+    'cooperation'  => ['cooperation.php', 'همکاری'],
     'about'        => ['about.php', 'درباره ما'],
 ];
 ?>
@@ -18,21 +20,17 @@ $nav = [
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0">
     <title><?= e($settings['site_title']) ?></title>
     <meta name="description" content="سامانه جامع خبری و اطلاع‌رسانی انجمن‌های علمی دانشگاه اراک">
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Vazirmatn:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="assets/css/style.css?v=<?= file_exists(__DIR__ . '/../assets/css/style.css') ? filemtime(__DIR__ . '/../assets/css/style.css') : '2.1' ?>">
-    <style>
-        :root {
-            --font-family: '<?= e($settings['font_family'] ?: 'Vazirmatn') ?>', 'Vazirmatn', -apple-system, BlinkMacSystemFont, Tahoma, sans-serif;
-        }
-    </style>
+    <link rel="preload" href="assets/fonts/YekanBakhFaNum-Regular.woff2" as="font" type="font/woff2" crossorigin>
+    <link rel="stylesheet" href="assets/css/style.css?v=<?= file_exists(__DIR__ . '/../assets/css/style.css') ? filemtime(__DIR__ . '/../assets/css/style.css') : '3.0' ?>">
 </head>
 <body>
 
 <header class="main-header" id="mainHeader">
     <div class="container header-flex">
-        <!-- Logo on Right (in RTL) -->
+        <button type="button" class="mobile-menu-btn" id="mobileMenuBtn" aria-label="منوی سایت" aria-expanded="false">
+            <?= svgIcon('menu', '', 24) ?>
+        </button>
+
         <a href="index.php" class="logo-box">
             <div class="logo-text">
                 <span class="logo-title">دانشگاه اراک</span>
@@ -42,8 +40,7 @@ $nav = [
                 <img src="assets/images/logo.svg" alt="دانشگاه اراک" class="logo-img">
             </div>
         </a>
-        
-        <!-- Navigation in Center -->
+
         <nav class="main-nav" id="mainNav">
             <ul class="nav-list">
                 <?php foreach ($nav as $key => $item): ?>
@@ -56,7 +53,6 @@ $nav = [
             </ul>
         </nav>
 
-        <!-- Search and Mobile Toggle on Left -->
         <div class="header-actions">
             <form class="search-box" action="news.php" method="get">
                 <input type="text" name="q" placeholder="جستجو در اخبار..." value="<?= e($_GET['q'] ?? '') ?>" aria-label="جستجو در اخبار">
@@ -64,9 +60,6 @@ $nav = [
                     <?= svgIcon('search', '', 18) ?>
                 </button>
             </form>
-            <button type="button" class="mobile-menu-btn" id="mobileMenuBtn" aria-label="منوی سایت">
-                <?= svgIcon('menu', '', 24) ?>
-            </button>
         </div>
     </div>
 </header>

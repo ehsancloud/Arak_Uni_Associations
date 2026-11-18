@@ -1,4 +1,6 @@
 <?php
+require_once __DIR__ . '/icons.php';
+
 function e($s) { return htmlspecialchars((string)$s, ENT_QUOTES, 'UTF-8'); }
 
 function getSettings($pdo) {
@@ -41,9 +43,21 @@ function uploadImage($field, $dir) {
     $ext = strtolower(pathinfo($_FILES[$field]['name'], PATHINFO_EXTENSION));
     if (!in_array($ext, ['jpg','jpeg','png','gif','webp','svg'])) return '';
     if ($ext !== 'svg' && !@getimagesize($_FILES[$field]['tmp_name'])) return '';
+    if (!is_dir($dir)) { @mkdir($dir, 0755, true); }
     $name = bin2hex(random_bytes(8)) . '.' . $ext;
     return move_uploaded_file($_FILES[$field]['tmp_name'], rtrim($dir, '/') . '/' . $name) ? $name : '';
 }
+
+// ---------- آپلود فایل سند و نشریه ----------
+function uploadDocument($field, $dir) {
+    if (empty($_FILES[$field]['name']) || $_FILES[$field]['error'] !== UPLOAD_ERR_OK) return '';
+    $ext = strtolower(pathinfo($_FILES[$field]['name'], PATHINFO_EXTENSION));
+    if (!in_array($ext, ['pdf', 'doc', 'docx', 'zip', 'rar', 'xlsx', 'pptx', 'jpg', 'jpeg', 'png'])) return '';
+    if (!is_dir($dir)) { @mkdir($dir, 0755, true); }
+    $name = bin2hex(random_bytes(8)) . '.' . $ext;
+    return move_uploaded_file($_FILES[$field]['tmp_name'], rtrim($dir, '/') . '/' . $name) ? $name : '';
+}
+
 
 // ---------- کتابخانه آیکون‌های وکتور برداری (بدون هیچ ایموجی) ----------
 function svgIcon($name, $class = '', $size = null) {
@@ -126,40 +140,61 @@ function svgIcon($name, $class = '', $size = null) {
         case 'chip':
             return '<svg ' . $cls . ' ' . $szAttr . ' viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="4" width="16" height="16" rx="3"/><circle cx="12" cy="12" r="3"/><line x1="12" y1="1" x2="12" y2="4"/><line x1="12" y1="20" x2="12" y2="23"/><line x1="1" y1="12" x2="4" y2="12"/><line x1="20" y1="12" x2="23" y2="12"/></svg>';
 
+        case 'user-plus':
+            return '<svg ' . $cls . ' ' . $szAttr . ' viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="8.5" cy="7" r="4"/><line x1="20" y1="8" x2="20" y2="14"/><line x1="23" y1="11" x2="17" y2="11"/></svg>';
+
+        case 'users':
+            return '<svg ' . $cls . ' ' . $szAttr . ' viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>';
+
+        case 'file-text':
+        case 'document':
+            return '<svg ' . $cls . ' ' . $szAttr . ' viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><line x1="10" y1="9" x2="8" y2="9"/></svg>';
+
+        case 'download':
+            return '<svg ' . $cls . ' ' . $szAttr . ' viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>';
+
+        case 'plus':
+            return '<svg ' . $cls . ' ' . $szAttr . ' viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>';
+
+        case 'edit':
+            return '<svg ' . $cls . ' ' . $szAttr . ' viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>';
+
+        case 'trash':
+            return '<svg ' . $cls . ' ' . $szAttr . ' viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/><line x1="10" y1="11" x2="10" y2="17"/><line x1="14" y1="11" x2="14" y2="17"/></svg>';
+
+        case 'eye':
+            return '<svg ' . $cls . ' ' . $szAttr . ' viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>';
+
+        case 'send':
+            return '<svg ' . $cls . ' ' . $szAttr . ' viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>';
+
+        case 'image':
+            return '<svg ' . $cls . ' ' . $szAttr . ' viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>';
+
+        case 'book-open':
+            return '<svg ' . $cls . ' ' . $szAttr . ' viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/></svg>';
+
+        case 'phone':
+            return '<svg ' . $cls . ' ' . $szAttr . ' viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/></svg>';
+
+        case 'mail':
+            return '<svg ' . $cls . ' ' . $szAttr . ' viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>';
+
+        case 'link':
+            return '<svg ' . $cls . ' ' . $szAttr . ' viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>';
+
+        case 'layers':
+            return '<svg ' . $cls . ' ' . $szAttr . ' viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="12 2 2 7 12 12 22 7 12 2"/><polyline points="2 17 12 22 22 17"/><polyline points="2 12 12 17 22 12"/></svg>';
+
         default:
             return '<svg ' . $cls . ' ' . $szAttr . ' viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/></svg>';
     }
 }
 
-// ---------- نگاشت خودکار آیکون‌های انجمن‌ها بر اساس نام ----------
-function getAssocIconSvg($name, $customIcon = '') {
-    if (!empty($customIcon)) {
-        if (file_exists(__DIR__ . '/../uploads/logos/' . $customIcon)) {
-            $ext = pathinfo($customIcon, PATHINFO_EXTENSION);
-            if ($ext === 'svg') {
-                return '<div class="assoc-icon-wrap">' . file_get_contents(__DIR__ . '/../uploads/logos/' . $customIcon) . '</div>';
-            }
-            return '<div class="assoc-icon-wrap"><img src="uploads/logos/' . e($customIcon) . '" alt=""></div>';
-        }
-    }
-    
-    // تطبیق بر اساس واژگان نام انجمن مطابق طراحی ارسالی
-    if (mb_strpos($name, 'انسانی') !== false) {
-        return '<div class="assoc-icon-wrap">' . svgIcon('book', 'assoc-svg', 36) . '</div>';
-    } elseif (mb_strpos($name, 'زیست') !== false) {
-        return '<div class="assoc-icon-wrap">' . svgIcon('dna', 'assoc-svg', 36) . '</div>';
-    } elseif (mb_strpos($name, 'فیزیک') !== false) {
-        return '<div class="assoc-icon-wrap">' . svgIcon('atom', 'assoc-svg', 36) . '</div>';
-    } elseif (mb_strpos($name, 'شیمی') !== false) {
-        return '<div class="assoc-icon-wrap">' . svgIcon('flask', 'assoc-svg', 36) . '</div>';
-    } elseif (mb_strpos($name, 'کامپیوتر') !== false) {
-        return '<div class="assoc-icon-wrap">' . svgIcon('computer', 'assoc-svg', 36) . '</div>';
-    } elseif (mb_strpos($name, 'صنایع') !== false) {
-        return '<div class="assoc-icon-wrap">' . svgIcon('gear', 'assoc-svg', 36) . '</div>';
-    } elseif (mb_strpos($name, 'هوش مصنوعی') !== false || mb_strpos($name, 'AI') !== false) {
-        return '<div class="assoc-icon-wrap">' . svgIcon('ai', 'assoc-svg', 36) . '</div>';
-    }
-    return '<div class="assoc-icon-wrap">' . svgIcon('building', 'assoc-svg', 36) . '</div>';
+// ---------- آیکون اختصاصی هر انجمن ----------
+function getAssocIconSvg($name, $customIcon = '', $iconKey = '') {
+    $key = assocIconKey(['name' => $name, 'icon_key' => $iconKey]);
+    return '<div class="assoc-icon-wrap">' . assocIconSvg($key) . '</div>';
 }
 
 // ---------- تصویر خبر ----------
@@ -219,7 +254,7 @@ function newsCard($n, $big = false) {
 
 // ---------- کارت انجمن ----------
 function assocCard($a) {
-    $iconHtml = getAssocIconSvg($a['name'], $a['icon'] ?? '');
+    $iconHtml = getAssocIconSvg($a['name'], '', $a['icon_key'] ?? '');
     return '<a href="association.php?id=' . (int)$a['id'] . '" class="assoc-card">
         ' . $iconHtml . '
         <span class="assoc-name">' . e($a['name']) . '</span>
