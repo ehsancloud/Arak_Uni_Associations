@@ -1,24 +1,31 @@
-<?php
-if (session_status() === PHP_SESSION_NONE) { session_start(); }
-require_once __DIR__ . '/../includes/db.php';
-require_once __DIR__ . '/../includes/functions.php';
-if (!isset($_SESSION['admin_id'])) { header('Location: index.php'); exit; }
+include 'inc/header.php';
 
 $message = '';
 $error = '';
-$assocFilter = (int)($_GET['assoc'] ?? 0);
+$assocFilter = $isSuperAdmin ? (int)($_GET['assoc'] ?? 0) : $adminAssocId;
 $kindFilter = $_GET['kind'] ?? '';
 
-// حذف سند
+// حذف سند با بررسی دسترسی
 if (isset($_GET['delete'])) {
     $delId = (int)$_GET['delete'];
-    $stmt = $pdo->prepare("SELECT file FROM documents WHERE id = ?");
-    $stmt->execute([$delId]);
-    $doc = $stmt->fetch();
-    if ($doc && !empty($doc['file'])) {
-        @unlink(__DIR__ . '/../uploads/documents/' . $doc['file']);
+    if ($isSuperAdmin) {
+        $stmt = $pdo->prepare("SELECT file FROM documents WHERE id = ?");
+        $stmt->execute([$delId]);
+    } else {
+        $stmt = $pdo->prepare("SELECT file FROM documents WHERE id = ? AND association_id = ?");
+        $stmt->execute([$delId, $adminAssocId]);
     }
-    $pdo->prepare("DELETE FROM documents WHERE id = ?")->execute([$delId]);
+    $doc = $stmt->fetch();
+    if ($doc) {
+        if (!empty($doc['file'])) {
+            @unlink(__DIR__ . '/../uploads/documents/' . $doc['file']);
+        }
+        if ($isSuperAdmin) {
+            $pdo->prepare("DELETE FROM documents WHERE id = ?")->execute([$delId]);
+        } else {
+            $pdo->prepare("DELETE FROM documents WHERE id = ? AND association_id = ?")->execute([$delId, $adminAssocId]);
+        }
+    }
     header("Location: documents.php?assoc=$assocFilter&kind=$kindFilter&msg=deleted");
     exit;
 }
@@ -26,7 +33,7 @@ if (isset($_GET['delete'])) {
 // ثبت یا ویرایش
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['save_document'])) {
     $id = (int)($_POST['id'] ?? 0);
-    $association_id = (int)($_POST['association_id'] ?? 0);
+    $association_id = $isSuperAdmin ? (int)($_POST['association_id'] ?? 0) : $adminAssocId;
     $title = trim($_POST['title'] ?? '');
     $kind = in_array($_POST['kind'] ?? '', ['report', 'file']) ? $_POST['kind'] : 'file';
     $period_label = trim($_POST['period_label'] ?? '');
@@ -45,8 +52,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['save_document'])) {
         $error = 'انتخاب و آپلود فایل الزامی است.';
     } else {
         if ($id > 0) {
-            $stmt = $pdo->prepare("UPDATE documents SET association_id = ?, title = ?, kind = ?, file = ?, period_label = ? WHERE id = ?");
-            $stmt->execute([$association_id, $title, $kind, $file, $period_label, $id]);
+            if ($isSuperAdmin) {
+                $stmt = $pdo->prepare("UPDATE documents SET association_id = ?, title = ?, kind = ?, file = ?, period_label = ? WHERE id = ?");
+                $stmt->execute([$association_id, $title, $kind, $file, $period_label, $id]);
+            } else {
+                $stmt = $pdo->prepare("UPDATE documents SET association_id = ?, title = ?, kind = ?, file = ?, period_label = ? WHERE id = ? AND association_id = ?");
+                $stmt->execute([$adminAssocId, $title, $kind, $file, $period_label, $id, $adminAssocId]);
+            }
         } else {
             $stmt = $pdo->prepare("INSERT INTO documents (association_id, title, kind, file, period_label) VALUES (?, ?, ?, ?, ?)");
             $stmt->execute([$association_id, $title, $kind, $file, $period_label]);
@@ -59,19 +71,32 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['save_document'])) {
 $edit = null;
 if (isset($_GET['edit'])) {
     $editId = (int)$_GET['edit'];
-    $stmt = $pdo->prepare("SELECT * FROM documents WHERE id = ?");
-    $stmt->execute([$editId]);
+    if ($isSuperAdmin) {
+        $stmt = $pdo->prepare("SELECT * FROM documents WHERE id = ?");
+        $stmt->execute([$editId]);
+    } else {
+        $stmt = $pdo->prepare("SELECT * FROM documents WHERE id = ? AND association_id = ?");
+        $stmt->execute([$editId, $adminAssocId]);
+    }
     $edit = $stmt->fetch();
 }
 
-$assocs = $pdo->query("SELECT id, name FROM associations ORDER BY name ASC")->fetchAll();
-
-$where = ["1=1"];
-$params = [];
-if ($assocFilter > 0) {
-    $where[] = "d.association_id = ?";
-    $params[] = $assocFilter;
+if ($isSuperAdmin) {
+    $assocs = $pdo->query("SELECT id, name FROM associations ORDER BY name ASC")->fetchAll();
+    $where = ["1=1"];
+    $params = [];
+    if ($assocFilter > 0) {
+        $where[] = "d.association_id = ?";
+        $params[] = $assocFilter;
+    }
+} else {
+    $assocs = $pdo->prepare("SELECT id, name FROM associations WHERE id = ?");
+    $assocs->execute([$adminAssocId]);
+    $assocs = $assocs->fetchAll();
+    $where = ["d.association_id = ?"];
+    $params = [$adminAssocId];
 }
+
 if (!empty($kindFilter) && in_array($kindFilter, ['report', 'file'])) {
     $where[] = "d.kind = ?";
     $params[] = $kindFilter;
@@ -85,8 +110,6 @@ $sql = "SELECT d.*, a.name AS assoc_name
 $stmt = $pdo->prepare($sql);
 $stmt->execute($params);
 $docsList = $stmt->fetchAll();
-
-include 'inc/header.php';
 ?>
 
 <div class="admin-header">
@@ -112,6 +135,7 @@ include 'inc/header.php';
 <!-- فیلتر -->
 <div class="admin-card">
     <form method="GET" style="display:flex; gap:16px; flex-wrap:wrap; align-items:flex-end;">
+        <?php if ($isSuperAdmin): ?>
         <div>
             <label style="display:block; margin-bottom:6px; font-size:13px; font-weight:600;">انجمن:</label>
             <select name="assoc" onchange="this.form.submit()" style="padding:8px 12px; border:1px solid #cbd5e1; border-radius:8px;">
@@ -123,6 +147,7 @@ include 'inc/header.php';
                 <?php endforeach; ?>
             </select>
         </div>
+        <?php endif; ?>
 
         <div>
             <label style="display:block; margin-bottom:6px; font-size:13px; font-weight:600;">نوع سند:</label>
@@ -212,7 +237,7 @@ include 'inc/header.php';
                 <input type="text" name="title" value="<?= e($edit['title'] ?? '') ?>" placeholder="مثلاً: اساسنامه مصوب انجمن علمی" required>
             </div>
 
-            <div class="form-group">
+            <div class="form-group" <?= !$isSuperAdmin ? 'style="display:none;"' : '' ?>>
                 <label>انجمن مربوطه: <span style="color:#dc2626;">*</span></label>
                 <select name="association_id" required>
                     <option value="">-- انتخاب انجمن --</option>

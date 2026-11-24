@@ -1,19 +1,21 @@
-<?php
-if (session_status() === PHP_SESSION_NONE) { session_start(); }
-require_once __DIR__ . '/../includes/db.php';
-require_once __DIR__ . '/../includes/functions.php';
-if (!isset($_SESSION['admin_id'])) { header('Location: index.php'); exit; }
+include 'inc/header.php';
 
+// حذف خبر با کنترل دسترسی
 if (isset($_GET['delete'])) {
-    $pdo->prepare("DELETE FROM news WHERE id=?")->execute([(int)$_GET['delete']]);
+    $delId = (int)$_GET['delete'];
+    if ($isSuperAdmin) {
+        $pdo->prepare("DELETE FROM news WHERE id=?")->execute([$delId]);
+    } else {
+        $pdo->prepare("DELETE FROM news WHERE id=? AND association_id=?")->execute([$delId, $adminAssocId]);
+    }
     header('Location: news.php'); exit;
 }
 
 if ($_SERVER['REQUEST_METHOD'] == 'POST') {
-    $title = $_POST['title'];
+    $title = trim($_POST['title'] ?? '');
     $content = $_POST['content'] ?? '';
-    $assoc = (int)$_POST['association_id'];
-    $date = $_POST['created_at'];
+    $assoc = $isSuperAdmin ? (int)($_POST['association_id'] ?? 0) : $adminAssocId;
+    $date = !empty($_POST['created_at']) ? $_POST['created_at'] : date('Y-m-d');
     
     $image = $_POST['current_image'] ?? '';
     $up = uploadImage('image', __DIR__ . '/../uploads/news/');
@@ -21,8 +23,13 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     
     $id = (int)($_POST['id'] ?? 0);
     if ($id > 0) {
-        $pdo->prepare("UPDATE news SET title=?, content=?, association_id=?, image=?, created_at=? WHERE id=?")
-            ->execute([$title, $content, $assoc, $image, $date, $id]);
+        if ($isSuperAdmin) {
+            $pdo->prepare("UPDATE news SET title=?, content=?, association_id=?, image=?, created_at=? WHERE id=?")
+                ->execute([$title, $content, $assoc, $image, $date, $id]);
+        } else {
+            $pdo->prepare("UPDATE news SET title=?, content=?, association_id=?, image=?, created_at=? WHERE id=? AND association_id=?")
+                ->execute([$title, $content, $adminAssocId, $image, $date, $id, $adminAssocId]);
+        }
     } else {
         $pdo->prepare("INSERT INTO news (title, content, association_id, image, created_at) VALUES (?,?,?,?,?)")
             ->execute([$title, $content, $assoc, $image, $date]);
@@ -32,17 +39,33 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
 
 $edit = null;
 if (isset($_GET['edit'])) {
-    $stmt = $pdo->prepare("SELECT * FROM news WHERE id=?");
-    $stmt->execute([(int)$_GET['edit']]);
+    $editId = (int)$_GET['edit'];
+    if ($isSuperAdmin) {
+        $stmt = $pdo->prepare("SELECT * FROM news WHERE id=?");
+        $stmt->execute([$editId]);
+    } else {
+        $stmt = $pdo->prepare("SELECT * FROM news WHERE id=? AND association_id=?");
+        $stmt->execute([$editId, $adminAssocId]);
+    }
     $edit = $stmt->fetch();
 }
 
-$assocs = $pdo->query("SELECT * FROM associations")->fetchAll();
-$news_list = $pdo->query("SELECT n.*, a.name as assoc_name FROM news n LEFT JOIN associations a ON n.association_id=a.id ORDER BY n.id DESC")->fetchAll();
+if ($isSuperAdmin) {
+    $assocs = $pdo->query("SELECT * FROM associations ORDER BY name ASC")->fetchAll();
+    $news_list = $pdo->query("SELECT n.*, a.name as assoc_name FROM news n LEFT JOIN associations a ON n.association_id=a.id ORDER BY n.id DESC")->fetchAll();
+} else {
+    $assocs = $pdo->prepare("SELECT * FROM associations WHERE id=?");
+    $assocs->execute([$adminAssocId]);
+    $assocs = $assocs->fetchAll();
+    $nStmt = $pdo->prepare("SELECT n.*, a.name as assoc_name FROM news n LEFT JOIN associations a ON n.association_id=a.id WHERE n.association_id=? ORDER BY n.id DESC");
+    $nStmt->execute([$adminAssocId]);
+    $news_list = $nStmt->fetchAll();
+}
+?>
 
-include 'inc/header.php'; ?>
-
-<div class="admin-header"><h2>مدیریت اخبار</h2></div>
+<div class="admin-header">
+    <h2><?= $isSuperAdmin ? 'مدیریت اخبار و اطلاعیه‌ها' : ('اخبار و اطلاعیه‌ها: ' . htmlspecialchars($currentAssocName ?: 'انجمن')) ?></h2>
+</div>
 
 <div class="admin-card">
     <h3><?= $edit ? 'ویرایش خبر' : 'افزودن خبر جدید' ?></h3>
@@ -58,13 +81,15 @@ include 'inc/header.php'; ?>
             <label>متن کامل خبر:</label>
             <textarea name="content" rows="8"><?= e($edit['content'] ?? '') ?></textarea>
         </div>
-        <div class="form-group">
-            <label>مربوط به انجمن:</label>
+        <div class="form-group" <?= !$isSuperAdmin ? 'style="display:none;"' : '' ?>>
+            <label>انجمن مربوطه:</label>
             <select name="association_id">
-                <option value="0">خبر عمومی</option>
+                <?php if ($isSuperAdmin): ?>
+                    <option value="0">دانشگاه اراک (عمومی / بدون انجمن)</option>
+                <?php endif; ?>
                 <?php foreach ($assocs as $a): ?>
-                    <option value="<?= $a['id'] ?>" <?= ($edit['association_id'] ?? 0)==$a['id']?'selected':'' ?>>
-                        <?= e($a['name']) ?>
+                    <option value="<?= $a['id'] ?>" <?= (($edit['association_id'] ?? ($isSuperAdmin ? 0 : $adminAssocId)) == $a['id']) ? 'selected' : '' ?>>
+                        <?= htmlspecialchars($a['name']) ?>
                     </option>
                 <?php endforeach; ?>
             </select>

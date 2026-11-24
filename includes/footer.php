@@ -14,16 +14,16 @@
 
             <div class="footer-actions">
                 <div class="footer-social-links">
-                    <a href="https://t.me" target="_blank" rel="noopener noreferrer" class="social-circle" aria-label="کانال تلگرام">
+                    <a href="https://eitaa.com/araku_anjoman" target="_blank" rel="noopener noreferrer" class="social-circle" aria-label="کانال ایتا انجمن‌های علمی دانشگاه اراک" title="کانال ایتا">
+                        <?= svgIcon('eitaa', '', 18) ?>
+                    </a>
+                    <a href="https://t.me/arakue" target="_blank" rel="noopener noreferrer" class="social-circle" aria-label="کانال تلگرام انجمن‌های علمی دانشگاه اراک" title="کانال تلگرام">
                         <?= svgIcon('telegram', '', 18) ?>
                     </a>
-                    <a href="https://instagram.com" target="_blank" rel="noopener noreferrer" class="social-circle" aria-label="صفحه اینستاگرام">
-                        <?= svgIcon('instagram', '', 18) ?>
+                    <a href="https://saau.ir" target="_blank" rel="noopener noreferrer" class="social-circle" aria-label="سامانه جامع انجمن‌های علمی (saau.ir)" title="سامانه saau.ir">
+                        <?= svgIcon('globe', '', 18) ?>
                     </a>
-                    <a href="https://linkedin.com" target="_blank" rel="noopener noreferrer" class="social-circle" aria-label="صفحه لینکدین">
-                        <?= svgIcon('linkedin', '', 18) ?>
-                    </a>
-                    <a href="https://araku.ac.ir" target="_blank" rel="noopener noreferrer" class="social-circle" aria-label="پورتال دانشگاه اراک">
+                    <a href="https://araku.ac.ir" target="_blank" rel="noopener noreferrer" class="social-circle" aria-label="پورتال دانشگاه اراک" title="پورتال دانشگاه اراک">
                         <?= svgIcon('grid', '', 18) ?>
                     </a>
                 </div>

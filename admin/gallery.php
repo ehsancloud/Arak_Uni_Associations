@@ -1,17 +1,17 @@
-<?php
-if (session_status() === PHP_SESSION_NONE) { session_start(); }
-require_once __DIR__ . '/../includes/db.php';
-require_once __DIR__ . '/../includes/functions.php';
-if (!isset($_SESSION['admin_id'])) { header('Location: index.php'); exit; }
+include 'inc/header.php';
 
 $message = '';
 $error = '';
-$assocFilter = (int)($_GET['assoc'] ?? 0);
+$assocFilter = $isSuperAdmin ? (int)($_GET['assoc'] ?? 0) : $adminAssocId;
 
-// حذف تصویر
+// حذف تصویر با کنترل دسترسی
 if (isset($_GET['delete'])) {
     $delId = (int)$_GET['delete'];
-    $pdo->prepare("DELETE FROM gallery_images WHERE id = ?")->execute([$delId]);
+    if ($isSuperAdmin) {
+        $pdo->prepare("DELETE FROM gallery_images WHERE id = ?")->execute([$delId]);
+    } else {
+        $pdo->prepare("DELETE FROM gallery_images WHERE id = ? AND association_id = ?")->execute([$delId, $adminAssocId]);
+    }
     header("Location: gallery.php?assoc=$assocFilter&msg=deleted");
     exit;
 }
@@ -19,7 +19,7 @@ if (isset($_GET['delete'])) {
 // ثبت یا ویرایش
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['save_gallery'])) {
     $id = (int)($_POST['id'] ?? 0);
-    $association_id = (int)($_POST['association_id'] ?? 0);
+    $association_id = $isSuperAdmin ? (int)($_POST['association_id'] ?? 0) : $adminAssocId;
     $caption = trim($_POST['caption'] ?? '');
     $sort_order = (int)($_POST['sort_order'] ?? 0);
 
@@ -35,8 +35,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['save_gallery'])) {
         $error = 'انتخاب انجمن مربوطه الزامی است.';
     } else {
         if ($id > 0) {
-            $stmt = $pdo->prepare("UPDATE gallery_images SET association_id = ?, image = ?, caption = ?, sort_order = ? WHERE id = ?");
-            $stmt->execute([$association_id, $image, $caption, $sort_order, $id]);
+            if ($isSuperAdmin) {
+                $stmt = $pdo->prepare("UPDATE gallery_images SET association_id = ?, image = ?, caption = ?, sort_order = ? WHERE id = ?");
+                $stmt->execute([$association_id, $image, $caption, $sort_order, $id]);
+            } else {
+                $stmt = $pdo->prepare("UPDATE gallery_images SET association_id = ?, image = ?, caption = ?, sort_order = ? WHERE id = ? AND association_id = ?");
+                $stmt->execute([$adminAssocId, $image, $caption, $sort_order, $id, $adminAssocId]);
+            }
         } else {
             $stmt = $pdo->prepare("INSERT INTO gallery_images (association_id, image, caption, sort_order) VALUES (?, ?, ?, ?)");
             $stmt->execute([$association_id, $image, $caption, $sort_order]);
@@ -49,18 +54,30 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['save_gallery'])) {
 $edit = null;
 if (isset($_GET['edit'])) {
     $editId = (int)$_GET['edit'];
-    $stmt = $pdo->prepare("SELECT * FROM gallery_images WHERE id = ?");
-    $stmt->execute([$editId]);
+    if ($isSuperAdmin) {
+        $stmt = $pdo->prepare("SELECT * FROM gallery_images WHERE id = ?");
+        $stmt->execute([$editId]);
+    } else {
+        $stmt = $pdo->prepare("SELECT * FROM gallery_images WHERE id = ? AND association_id = ?");
+        $stmt->execute([$editId, $adminAssocId]);
+    }
     $edit = $stmt->fetch();
 }
 
-$assocs = $pdo->query("SELECT id, name FROM associations ORDER BY name ASC")->fetchAll();
-
-$where = ["1=1"];
-$params = [];
-if ($assocFilter > 0) {
-    $where[] = "g.association_id = ?";
-    $params[] = $assocFilter;
+if ($isSuperAdmin) {
+    $assocs = $pdo->query("SELECT id, name FROM associations ORDER BY name ASC")->fetchAll();
+    $where = ["1=1"];
+    $params = [];
+    if ($assocFilter > 0) {
+        $where[] = "g.association_id = ?";
+        $params[] = $assocFilter;
+    }
+} else {
+    $assocs = $pdo->prepare("SELECT id, name FROM associations WHERE id = ?");
+    $assocs->execute([$adminAssocId]);
+    $assocs = $assocs->fetchAll();
+    $where = ["g.association_id = ?"];
+    $params = [$adminAssocId];
 }
 
 $sql = "SELECT g.*, a.name AS assoc_name 
@@ -71,8 +88,6 @@ $sql = "SELECT g.*, a.name AS assoc_name
 $stmt = $pdo->prepare($sql);
 $stmt->execute($params);
 $galleryList = $stmt->fetchAll();
-
-include 'inc/header.php';
 ?>
 
 <div class="admin-header">
@@ -95,6 +110,7 @@ include 'inc/header.php';
     <div class="alert alert-danger"><?= e($error) ?></div>
 <?php endif; ?>
 
+<?php if ($isSuperAdmin): ?>
 <!-- فیلتر انجمن -->
 <div class="admin-card">
     <form method="GET" style="display:flex; gap:12px; align-items:center;">
@@ -109,6 +125,7 @@ include 'inc/header.php';
         </select>
     </form>
 </div>
+<?php endif; ?>
 
 <!-- لیست تصاویر گالری -->
 <div class="admin-card">
@@ -157,7 +174,7 @@ include 'inc/header.php';
         <input type="hidden" name="current_image" value="<?= e($edit['image'] ?? '') ?>">
 
         <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap:18px;">
-            <div class="form-group">
+            <div class="form-group" <?= !$isSuperAdmin ? 'style="display:none;"' : '' ?>>
                 <label>انجمن مربوطه: <span style="color:#dc2626;">*</span></label>
                 <select name="association_id" required>
                     <option value="">-- انتخاب انجمن --</option>

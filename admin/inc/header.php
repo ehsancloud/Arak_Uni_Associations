@@ -8,6 +8,28 @@ if (!isset($_SESSION['admin_id']) && $current_page != 'index.php') {
     header('Location: index.php');
     exit;
 }
+
+$adminRole = $_SESSION['admin_role'] ?? 'superadmin';
+$adminAssocId = (int)($_SESSION['admin_assoc_id'] ?? 0);
+$isSuperAdmin = ($adminRole === 'superadmin');
+$adminFullName = $_SESSION['admin_fullname'] ?? $_SESSION['admin_user'] ?? 'کاربر';
+
+function requireSuperAdmin() {
+    if (empty($_SESSION['admin_role']) || $_SESSION['admin_role'] !== 'superadmin') {
+        header('Location: index.php');
+        exit;
+    }
+}
+
+// دریافت نام انجمن دبیر در صورت وجود
+$currentAssocName = '';
+if (!$isSuperAdmin && $adminAssocId > 0) {
+    try {
+        $stA = $pdo->prepare("SELECT name FROM associations WHERE id = ?");
+        $stA->execute([$adminAssocId]);
+        $currentAssocName = $stA->fetchColumn() ?: '';
+    } catch (Exception $e) {}
+}
 ?>
 <!DOCTYPE html>
 <html lang="fa" dir="rtl">
@@ -22,32 +44,48 @@ if (!isset($_SESSION['admin_id']) && $current_page != 'index.php') {
 <?php if (isset($_SESSION['admin_id'])): ?>
 <aside class="admin-sidebar">
     <div class="sidebar-brand">
-        <img src="../assets/images/logo-white.svg" alt="دانشگاه اراک" style="width:36px;height:36px;">
-        <h2>پنل مدیریت</h2>
+        <img src="../assets/images/logo-white.svg" alt="دانشگاه اراک" style="width:36px;height:36px;object-fit:contain;">
+        <div>
+            <h2 style="font-size:15px; margin:0; line-height:1.3;">پنل مدیریت</h2>
+            <?php if (!$isSuperAdmin && $currentAssocName): ?>
+                <span style="font-size:11.5px; color:#93c5fd; display:block; margin-top:3px;"><?= htmlspecialchars($currentAssocName) ?></span>
+            <?php endif; ?>
+        </div>
     </div>
     <ul class="sidebar-nav">
         <li>
             <a href="index.php" class="<?= $current_page=='index.php'?'active':'' ?>">
                 <?= svgIcon('grid', 'nav-svg', 18) ?>
-                <span>داشبورد</span>
+                <span>داشبورد <?= $isSuperAdmin ? 'کل' : 'انجمن' ?></span>
             </a>
         </li>
+
+        <?php if ($isSuperAdmin): ?>
+            <li>
+                <a href="users.php" class="<?= $current_page=='users.php'?'active':'' ?>">
+                    <?= svgIcon('user-plus', 'nav-svg', 18) ?>
+                    <span>مدیریت دبیران</span>
+                </a>
+            </li>
+            <li>
+                <a href="associations.php" class="<?= $current_page=='associations.php'?'active':'' ?>">
+                    <?= svgIcon('building', 'nav-svg', 18) ?>
+                    <span>مدیریت انجمن‌ها</span>
+                </a>
+            </li>
+        <?php else: ?>
+            <li>
+                <a href="associations.php?edit=<?= $adminAssocId ?>" class="<?= $current_page=='associations.php'?'active':'' ?>">
+                    <?= svgIcon('building', 'nav-svg', 18) ?>
+                    <span>مشخصات و هدر انجمن</span>
+                </a>
+            </li>
+        <?php endif; ?>
+
         <li>
-            <a href="associations.php" class="<?= $current_page=='associations.php'?'active':'' ?>">
-                <?= svgIcon('building', 'nav-svg', 18) ?>
-                <span>مدیریت انجمن‌ها</span>
-            </a>
-        </li>
-        <li>
-            <a href="forms.php" class="<?= $current_page=='forms.php'?'active':'' ?>">
-                <?= svgIcon('file-text', 'nav-svg', 18) ?>
-                <span>فرم‌ها و فیلدها</span>
-            </a>
-        </li>
-        <li>
-            <a href="submissions.php" class="<?= $current_page=='submissions.php'?'active':'' ?>">
-                <?= svgIcon('check', 'nav-svg', 18) ?>
-                <span>ثبت‌نامی‌ها</span>
+            <a href="members.php" class="<?= $current_page=='members.php'?'active':'' ?>">
+                <?= svgIcon('users', 'nav-svg', 18) ?>
+                <span>اعضای شورای مرکزی</span>
             </a>
         </li>
         <li>
@@ -63,15 +101,15 @@ if (!isset($_SESSION['admin_id']) && $current_page != 'index.php') {
             </a>
         </li>
         <li>
-            <a href="ticker.php" class="<?= $current_page=='ticker.php'?'active':'' ?>">
-                <?= svgIcon('megaphone', 'nav-svg', 18) ?>
-                <span>نوار آخرین اخبار</span>
+            <a href="forms.php" class="<?= $current_page=='forms.php'?'active':'' ?>">
+                <?= svgIcon('file-text', 'nav-svg', 18) ?>
+                <span>فرم‌ها و فیلدها</span>
             </a>
         </li>
         <li>
-            <a href="members.php" class="<?= $current_page=='members.php'?'active':'' ?>">
-                <?= svgIcon('users', 'nav-svg', 18) ?>
-                <span>اعضای انجمن‌ها</span>
+            <a href="submissions.php" class="<?= $current_page=='submissions.php'?'active':'' ?>">
+                <?= svgIcon('check', 'nav-svg', 18) ?>
+                <span>ثبت‌نامی‌ها</span>
             </a>
         </li>
         <li>
@@ -92,12 +130,29 @@ if (!isset($_SESSION['admin_id']) && $current_page != 'index.php') {
                 <span>گالری تصاویر</span>
             </a>
         </li>
-        <li>
-            <a href="settings.php" class="<?= $current_page=='settings.php'?'active':'' ?>">
-                <?= svgIcon('gear', 'nav-svg', 18) ?>
-                <span>تنظیمات سایت</span>
-            </a>
-        </li>
+
+        <?php if ($isSuperAdmin): ?>
+            <li>
+                <a href="ticker.php" class="<?= $current_page=='ticker.php'?'active':'' ?>">
+                    <?= svgIcon('megaphone', 'nav-svg', 18) ?>
+                    <span>نوار آخرین اخبار</span>
+                </a>
+            </li>
+            <li>
+                <a href="settings.php" class="<?= $current_page=='settings.php'?'active':'' ?>">
+                    <?= svgIcon('gear', 'nav-svg', 18) ?>
+                    <span>تنظیمات سایت</span>
+                </a>
+            </li>
+        <?php else: ?>
+            <li style="margin-top:6px;">
+                <a href="../association.php?id=<?= $adminAssocId ?>" target="_blank" style="color:#60a5fa;">
+                    <?= svgIcon('eye', 'nav-svg', 18) ?>
+                    <span>مشاهده انجمن در سایت</span>
+                </a>
+            </li>
+        <?php endif; ?>
+
         <li style="margin-top:12px; padding-top:12px; border-top:1px solid rgba(255,255,255,0.1);">
             <a href="index.php?logout=1" class="logout-link">
                 <?= svgIcon('close', 'nav-svg', 18) ?>

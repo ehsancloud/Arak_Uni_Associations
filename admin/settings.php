@@ -24,7 +24,9 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
 $stmt = $pdo->query("SELECT * FROM settings WHERE id=1");
 $s = $stmt->fetch();
 
-include 'inc/header.php'; ?>
+include 'inc/header.php';
+requireSuperAdmin();
+?>
 
 <div class="admin-header"><h2>تنظیمات سایت</h2></div>
 <?= $msg ?>

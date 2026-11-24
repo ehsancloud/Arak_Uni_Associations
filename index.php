@@ -27,7 +27,7 @@ try {
 
 <!-- Hero Section -->
 <section class="hero-section">
-    <div class="hero-bg-layer" style="background-image: url('assets/images/main-hero.jpg');"></div>
+    <div class="hero-bg-layer" style="background-image: url('assets/images/science-faculty.jpg');"></div>
     <div class="hero-overlay"></div>
     <div class="container hero-container">
         <div class="hero-content">

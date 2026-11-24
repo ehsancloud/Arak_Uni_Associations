@@ -1,18 +1,20 @@
-<?php
-if (session_status() === PHP_SESSION_NONE) { session_start(); }
-require_once __DIR__ . '/../includes/db.php';
-require_once __DIR__ . '/../includes/functions.php';
-if (!isset($_SESSION['admin_id'])) { header('Location: index.php'); exit; }
+include 'inc/header.php';
 
+// حذف عضو با بررسی دسترسی
 if (isset($_GET['delete'])) {
-    $pdo->prepare("DELETE FROM members WHERE id=?")->execute([(int)$_GET['delete']]);
+    $delId = (int)$_GET['delete'];
+    if ($isSuperAdmin) {
+        $pdo->prepare("DELETE FROM members WHERE id=?")->execute([$delId]);
+    } else {
+        $pdo->prepare("DELETE FROM members WHERE id=? AND association_id=?")->execute([$delId, $adminAssocId]);
+    }
     header('Location: members.php'); exit;
 }
 
 if ($_SERVER['REQUEST_METHOD'] == 'POST') {
-    $name = $_POST['full_name'];
-    $role = $_POST['role'];
-    $assoc = (int)$_POST['association_id'];
+    $name = trim($_POST['full_name'] ?? '');
+    $role = trim($_POST['role'] ?? '');
+    $assoc = $isSuperAdmin ? (int)($_POST['association_id'] ?? 0) : $adminAssocId;
     
     $image = $_POST['current_image'] ?? '';
     $up = uploadImage('image', __DIR__ . '/../uploads/profiles/');
@@ -20,8 +22,13 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     
     $id = (int)($_POST['id'] ?? 0);
     if ($id > 0) {
-        $pdo->prepare("UPDATE members SET full_name=?, role=?, association_id=?, image=? WHERE id=?")
-            ->execute([$name, $role, $assoc, $image, $id]);
+        if ($isSuperAdmin) {
+            $pdo->prepare("UPDATE members SET full_name=?, role=?, association_id=?, image=? WHERE id=?")
+                ->execute([$name, $role, $assoc, $image, $id]);
+        } else {
+            $pdo->prepare("UPDATE members SET full_name=?, role=?, association_id=?, image=? WHERE id=? AND association_id=?")
+                ->execute([$name, $role, $adminAssocId, $image, $id, $adminAssocId]);
+        }
     } else {
         $pdo->prepare("INSERT INTO members (full_name, role, association_id, image) VALUES (?,?,?,?)")
             ->execute([$name, $role, $assoc, $image]);
@@ -31,47 +38,69 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
 
 $edit = null;
 if (isset($_GET['edit'])) {
-    $stmt = $pdo->prepare("SELECT * FROM members WHERE id=?");
-    $stmt->execute([(int)$_GET['edit']]);
+    $editId = (int)$_GET['edit'];
+    if ($isSuperAdmin) {
+        $stmt = $pdo->prepare("SELECT * FROM members WHERE id=?");
+        $stmt->execute([$editId]);
+    } else {
+        $stmt = $pdo->prepare("SELECT * FROM members WHERE id=? AND association_id=?");
+        $stmt->execute([$editId, $adminAssocId]);
+    }
     $edit = $stmt->fetch();
 }
 
-$assocs = $pdo->query("SELECT * FROM associations")->fetchAll();
-$list = $pdo->query("SELECT m.*, a.name as assoc_name FROM members m LEFT JOIN associations a ON m.association_id=a.id ORDER BY m.id DESC")->fetchAll();
+if ($isSuperAdmin) {
+    $assocs = $pdo->query("SELECT * FROM associations ORDER BY name ASC")->fetchAll();
+    $list = $pdo->query("SELECT m.*, a.name as assoc_name FROM members m LEFT JOIN associations a ON m.association_id=a.id ORDER BY m.id DESC")->fetchAll();
+} else {
+    $assocs = $pdo->prepare("SELECT * FROM associations WHERE id=?");
+    $assocs->execute([$adminAssocId]);
+    $assocs = $assocs->fetchAll();
+    $listStmt = $pdo->prepare("SELECT m.*, a.name as assoc_name FROM members m LEFT JOIN associations a ON m.association_id=a.id WHERE m.association_id=? ORDER BY m.id DESC");
+    $listStmt->execute([$adminAssocId]);
+    $list = $listStmt->fetchAll();
+}
+?>
 
-include 'inc/header.php'; ?>
-
-<div class="admin-header"><h2>مدیریت اعضای انجمن‌ها</h2></div>
+<div class="admin-header">
+    <h2><?= $isSuperAdmin ? 'مدیریت اعضای شورای مرکزی انجمن‌ها' : ('اعضای شورای مرکزی: ' . htmlspecialchars($currentAssocName ?: 'انجمن')) ?></h2>
+</div>
 
 <div class="admin-card">
-    <h3><?= $edit ? 'ویرایش عضو' : 'افزودن عضو جدید' ?></h3>
+    <h3><?= $edit ? 'ویرایش اطلاعات عضو شورا' : 'افزودن عضو جدید به شورای مرکزی' ?></h3>
     <form method="POST" enctype="multipart/form-data">
         <input type="hidden" name="id" value="<?= $edit['id'] ?? '' ?>">
         <input type="hidden" name="current_image" value="<?= $edit['image'] ?? '' ?>">
         
         <div class="form-group">
             <label>نام و نام خانوادگی:</label>
-            <input type="text" name="full_name" value="<?= htmlspecialchars($edit['full_name'] ?? '') ?>" required>
+            <input type="text" name="full_name" value="<?= htmlspecialchars($edit['full_name'] ?? '') ?>" placeholder="مثلاً: امیرحسین زمانی" required>
         </div>
         <div class="form-group">
-            <label>سمت (دبیر، نایب دبیر، عضو...):</label>
-            <input type="text" name="role" value="<?= htmlspecialchars($edit['role'] ?? '') ?>" required>
+            <label>سمت در شورا (دبیر، نایب دبیر، روابط عمومی، عضو شورا...):</label>
+            <input type="text" name="role" value="<?= htmlspecialchars($edit['role'] ?? '') ?>" placeholder="مثلاً: دبیر انجمن" required>
         </div>
-        <div class="form-group">
-            <label>انجمن:</label>
+        <div class="form-group" <?= !$isSuperAdmin ? 'style="display:none;"' : '' ?>>
+            <label>انجمن مربوطه:</label>
             <select name="association_id" required>
                 <?php foreach ($assocs as $a): ?>
-                    <option value="<?= $a['id'] ?>" <?= ($edit['association_id'] ?? 0)==$a['id']?'selected':'' ?>>
+                    <option value="<?= $a['id'] ?>" <?= (($edit['association_id'] ?? ($isSuperAdmin ? 0 : $adminAssocId)) == $a['id']) ? 'selected' : '' ?>>
                         <?= htmlspecialchars($a['name']) ?>
                     </option>
                 <?php endforeach; ?>
             </select>
         </div>
         <div class="form-group">
-            <label>تصویر عضو:</label>
+            <label>تصویر پرتره عضو (اختیاری):</label>
             <input type="file" name="image" accept="image/*">
+            <?php if (!empty($edit['image'])): ?>
+                <div style="margin-top:8px;">
+                    <img src="../uploads/profiles/<?= htmlspecialchars($edit['image']) ?>" width="60" height="60" style="border-radius:50%; object-fit:cover;">
+                </div>
+            <?php endif; ?>
         </div>
-        <button type="submit" class="btn"><?= $edit ? 'ویرایش' : 'افزودن' ?></button>
+        <button type="submit" class="btn"><?= $edit ? 'ذخیره تغییرات' : 'افزودن عضو' ?></button>
+        <?php if ($edit): ?><a href="members.php" class="btn btn-secondary">انصراف</a><?php endif; ?>
     </form>
 </div>
 

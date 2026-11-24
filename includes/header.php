@@ -22,8 +22,42 @@ $nav = [
     <meta name="description" content="سامانه جامع خبری و اطلاع‌رسانی انجمن‌های علمی دانشگاه اراک">
     <link rel="preload" href="assets/fonts/YekanBakhFaNum-Regular.woff2" as="font" type="font/woff2" crossorigin>
     <link rel="stylesheet" href="assets/css/style.css?v=<?= file_exists(__DIR__ . '/../assets/css/style.css') ? filemtime(__DIR__ . '/../assets/css/style.css') : '3.0' ?>">
-</head>
 <body>
+
+<!-- اسکلتون لودینگ صفحه (Skeleton Screen Loader) -->
+<div id="pageSkeleton" class="page-skeleton-overlay" aria-hidden="true">
+    <div class="skeleton-header-wrap">
+        <div style="display:flex; align-items:center; gap:12px;">
+            <div class="skeleton-shimmer" style="width:40px; height:40px; border-radius:50%;"></div>
+            <div style="display:flex; flex-direction:column; gap:6px;">
+                <div class="skeleton-shimmer" style="width:110px; height:14px;"></div>
+                <div class="skeleton-shimmer" style="width:75px; height:10px;"></div>
+            </div>
+        </div>
+        <div style="display:flex; gap:16px;">
+            <div class="skeleton-shimmer" style="width:65px; height:12px;"></div>
+            <div class="skeleton-shimmer" style="width:65px; height:12px;"></div>
+            <div class="skeleton-shimmer" style="width:65px; height:12px;"></div>
+            <div class="skeleton-shimmer" style="width:65px; height:12px;"></div>
+        </div>
+        <div class="skeleton-shimmer" style="width:140px; height:36px; border-radius:20px;"></div>
+    </div>
+    <div class="skeleton-hero-wrap">
+        <div class="skeleton-shimmer" style="width:280px; height:28px;"></div>
+        <div class="skeleton-shimmer" style="width:400px; height:16px;"></div>
+        <div class="skeleton-shimmer" style="width:340px; height:16px;"></div>
+        <div style="display:flex; gap:12px; margin-top:12px;">
+            <div class="skeleton-shimmer" style="width:120px; height:38px; border-radius:8px;"></div>
+            <div class="skeleton-shimmer" style="width:120px; height:38px; border-radius:8px;"></div>
+        </div>
+    </div>
+    <div class="skeleton-content-grid">
+        <div class="skeleton-shimmer" style="height:180px; border-radius:12px;"></div>
+        <div class="skeleton-shimmer" style="height:180px; border-radius:12px;"></div>
+        <div class="skeleton-shimmer" style="height:180px; border-radius:12px;"></div>
+        <div class="skeleton-shimmer" style="height:180px; border-radius:12px;"></div>
+    </div>
+</div>
 
 <header class="main-header" id="mainHeader">
     <div class="container header-flex">

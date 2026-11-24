@@ -1,16 +1,16 @@
-<?php
-if (session_status() === PHP_SESSION_NONE) { session_start(); }
-require_once __DIR__ . '/../includes/db.php';
-require_once __DIR__ . '/../includes/functions.php';
-if (!isset($_SESSION['admin_id'])) { header('Location: index.php'); exit; }
+include 'inc/header.php';
 
 $message = '';
 $error = '';
 
-// حذف رویداد
+// حذف رویداد با بررسی دسترسی
 if (isset($_GET['delete'])) {
     $delId = (int)$_GET['delete'];
-    $pdo->prepare("DELETE FROM events WHERE id = ?")->execute([$delId]);
+    if ($isSuperAdmin) {
+        $pdo->prepare("DELETE FROM events WHERE id = ?")->execute([$delId]);
+    } else {
+        $pdo->prepare("DELETE FROM events WHERE id = ? AND association_id = ?")->execute([$delId, $adminAssocId]);
+    }
     header('Location: events.php?msg=deleted');
     exit;
 }
@@ -18,7 +18,11 @@ if (isset($_GET['delete'])) {
 // تغییر وضعیت انتشار
 if (isset($_GET['toggle_publish'])) {
     $pId = (int)$_GET['toggle_publish'];
-    $pdo->prepare("UPDATE events SET is_published = 1 - is_published WHERE id = ?")->execute([$pId]);
+    if ($isSuperAdmin) {
+        $pdo->prepare("UPDATE events SET is_published = 1 - is_published WHERE id = ?")->execute([$pId]);
+    } else {
+        $pdo->prepare("UPDATE events SET is_published = 1 - is_published WHERE id = ? AND association_id = ?")->execute([$pId, $adminAssocId]);
+    }
     header('Location: events.php?msg=status_updated');
     exit;
 }
@@ -27,7 +31,7 @@ if (isset($_GET['toggle_publish'])) {
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['save_event'])) {
     $id = (int)($_POST['id'] ?? 0);
     $title = trim($_POST['title'] ?? '');
-    $association_id = (int)($_POST['association_id'] ?? 0);
+    $association_id = $isSuperAdmin ? (int)($_POST['association_id'] ?? 0) : $adminAssocId;
     $description = trim($_POST['description'] ?? '');
     $location = trim($_POST['location'] ?? '');
     $starts_at = trim($_POST['starts_at'] ?? '');
@@ -61,8 +65,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['save_event'])) {
         }
 
         if ($id > 0) {
-            $stmt = $pdo->prepare("UPDATE events SET title = ?, association_id = ?, description = ?, location = ?, starts_at = ?, ends_at = ?, image = ?, form_id = ?, is_published = ? WHERE id = ?");
-            $stmt->execute([$title, $association_id, $description, $location, $starts_at, $ends_at, $image, $form_id, $is_published, $id]);
+            if ($isSuperAdmin) {
+                $stmt = $pdo->prepare("UPDATE events SET title = ?, association_id = ?, description = ?, location = ?, starts_at = ?, ends_at = ?, image = ?, form_id = ?, is_published = ? WHERE id = ?");
+                $stmt->execute([$title, $association_id, $description, $location, $starts_at, $ends_at, $image, $form_id, $is_published, $id]);
+            } else {
+                $stmt = $pdo->prepare("UPDATE events SET title = ?, association_id = ?, description = ?, location = ?, starts_at = ?, ends_at = ?, image = ?, form_id = ?, is_published = ? WHERE id = ? AND association_id = ?");
+                $stmt->execute([$title, $adminAssocId, $description, $location, $starts_at, $ends_at, $image, $form_id, $is_published, $id, $adminAssocId]);
+            }
         } else {
             $stmt = $pdo->prepare("INSERT INTO events (title, association_id, description, location, starts_at, ends_at, image, form_id, is_published) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)");
             $stmt->execute([$title, $association_id, $description, $location, $starts_at, $ends_at, $image, $form_id, $is_published]);
@@ -77,21 +86,42 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['save_event'])) {
 $edit = null;
 if (isset($_GET['edit'])) {
     $editId = (int)$_GET['edit'];
-    $stmt = $pdo->prepare("SELECT * FROM events WHERE id = ?");
-    $stmt->execute([$editId]);
+    if ($isSuperAdmin) {
+        $stmt = $pdo->prepare("SELECT * FROM events WHERE id = ?");
+        $stmt->execute([$editId]);
+    } else {
+        $stmt = $pdo->prepare("SELECT * FROM events WHERE id = ? AND association_id = ?");
+        $stmt->execute([$editId, $adminAssocId]);
+    }
     $edit = $stmt->fetch();
 }
 
-$assocs = $pdo->query("SELECT id, name FROM associations ORDER BY name ASC")->fetchAll();
-$forms = $pdo->query("SELECT id, title FROM forms ORDER BY id DESC")->fetchAll();
+if ($isSuperAdmin) {
+    $assocs = $pdo->query("SELECT id, name FROM associations ORDER BY name ASC")->fetchAll();
+    $forms = $pdo->query("SELECT id, title FROM forms ORDER BY id DESC")->fetchAll();
+    $events = $pdo->query("SELECT e.*, a.name AS assoc_name, f.title AS form_title 
+                           FROM events e 
+                           LEFT JOIN associations a ON e.association_id = a.id 
+                           LEFT JOIN forms f ON e.form_id = f.id 
+                           ORDER BY e.starts_at DESC")->fetchAll();
+} else {
+    $assocs = $pdo->prepare("SELECT id, name FROM associations WHERE id = ?");
+    $assocs->execute([$adminAssocId]);
+    $assocs = $assocs->fetchAll();
 
-$events = $pdo->query("SELECT e.*, a.name AS assoc_name, f.title AS form_title 
-                       FROM events e 
-                       LEFT JOIN associations a ON e.association_id = a.id 
-                       LEFT JOIN forms f ON e.form_id = f.id 
-                       ORDER BY e.starts_at DESC")->fetchAll();
+    $fStmt = $pdo->prepare("SELECT id, title FROM forms WHERE association_id = ? OR association_id = 0 ORDER BY id DESC");
+    $fStmt->execute([$adminAssocId]);
+    $forms = $fStmt->fetchAll();
 
-include 'inc/header.php';
+    $evStmt = $pdo->prepare("SELECT e.*, a.name AS assoc_name, f.title AS form_title 
+                             FROM events e 
+                             LEFT JOIN associations a ON e.association_id = a.id 
+                             LEFT JOIN forms f ON e.form_id = f.id 
+                             WHERE e.association_id = ? 
+                             ORDER BY e.starts_at DESC");
+    $evStmt->execute([$adminAssocId]);
+    $events = $evStmt->fetchAll();
+}
 ?>
 
 <div class="admin-header">
@@ -197,12 +227,14 @@ include 'inc/header.php';
                 <input type="text" name="title" value="<?= e($edit['title'] ?? '') ?>" placeholder="مثلاً: کارگاه کاربردی یادگیری ماشین" required>
             </div>
 
-            <div class="form-group">
+            <div class="form-group" <?= !$isSuperAdmin ? 'style="display:none;"' : '' ?>>
                 <label>انجمن برگزارکننده:</label>
                 <select name="association_id">
-                    <option value="0">دانشگاه اراک (عمومی / بدون انجمن خاص)</option>
+                    <?php if ($isSuperAdmin): ?>
+                        <option value="0">دانشگاه اراک (عمومی / بدون انجمن خاص)</option>
+                    <?php endif; ?>
                     <?php foreach ($assocs as $a): ?>
-                        <option value="<?= (int)$a['id'] ?>" <?= (!empty($edit['association_id']) && $edit['association_id'] == $a['id']) ? 'selected' : '' ?>>
+                        <option value="<?= (int)$a['id'] ?>" <?= (!empty($edit['association_id']) && $edit['association_id'] == $a['id']) ? 'selected' : (!$isSuperAdmin ? 'selected' : '') ?>>
                             <?= e($a['name']) ?>
                         </option>
                     <?php endforeach; ?>

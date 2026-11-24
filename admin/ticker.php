@@ -43,7 +43,9 @@ if (isset($_GET['edit'])) {
 $assocs = $pdo->query("SELECT * FROM associations ORDER BY name")->fetchAll();
 $list = $pdo->query("SELECT t.*, a.name AS assoc_name FROM ticker_items t LEFT JOIN associations a ON t.association_id=a.id ORDER BY t.association_id, t.sort_order, t.id DESC")->fetchAll();
 
-include 'inc/header.php'; ?>
+include 'inc/header.php';
+requireSuperAdmin();
+?>
 
 <div class="admin-header"><h2>مدیریت نوار «آخرین اخبار»</h2></div>
 

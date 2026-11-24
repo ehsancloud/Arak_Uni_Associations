@@ -83,4 +83,24 @@ document.addEventListener('DOMContentLoaded', () => {
         }, { passive: true });
     }
 
+    // ---------- ۴. اسکلتون لودینگ (Skeleton Screen Loader) ----------
+    const skeleton = document.getElementById('pageSkeleton');
+    if (skeleton) {
+        const dismissSkeleton = () => {
+            if (!skeleton.classList.contains('hidden')) {
+                skeleton.classList.add('hidden');
+                setTimeout(() => {
+                    if (skeleton.parentNode) {
+                        skeleton.parentNode.removeChild(skeleton);
+                    }
+                }, 400);
+            }
+        };
+
+        // حذف اسکلتون هنگام لود کامل صفحه
+        window.addEventListener('load', dismissSkeleton);
+        // سقف زمانی حداکثر ۶۵۰ میلی‌ثانیه
+        setTimeout(dismissSkeleton, 650);
+    }
+
 });

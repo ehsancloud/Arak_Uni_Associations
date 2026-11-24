@@ -154,10 +154,15 @@ CREATE TABLE IF NOT EXISTS `festival_registrations` (
 
 CREATE TABLE IF NOT EXISTS `admins` (
   `id` int(11) NOT NULL AUTO_INCREMENT PRIMARY KEY,
-  `username` varchar(50) NOT NULL,
-  `password` varchar(255) NOT NULL
+  `username` varchar(50) NOT NULL UNIQUE,
+  `password` varchar(255) NOT NULL,
+  `role` enum('superadmin','secretary') NOT NULL DEFAULT 'superadmin',
+  `association_id` int(11) NULL DEFAULT NULL,
+  `full_name` varchar(150) NULL DEFAULT NULL,
+  `created_at` datetime DEFAULT CURRENT_TIMESTAMP,
+  KEY `idx_admins_assoc` (`association_id`)
 ) DEFAULT CHARSET=utf8mb4;
 
-INSERT INTO `admins` (`id`, `username`, `password`) 
-VALUES (1, 'admin', 'e10adc3949ba59abbe56e057f20f883e')
+INSERT INTO `admins` (`id`, `username`, `password`, `role`, `association_id`, `full_name`) 
+VALUES (1, 'admin', 'e10adc3949ba59abbe56e057f20f883e', 'superadmin', NULL, 'مدیر کل سامانه')
 ON DUPLICATE KEY UPDATE `username` = VALUES(`username`);

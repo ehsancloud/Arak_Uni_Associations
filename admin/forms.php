@@ -1,18 +1,24 @@
-<?php
-if (session_status() === PHP_SESSION_NONE) { session_start(); }
-require_once __DIR__ . '/../includes/db.php';
-require_once __DIR__ . '/../includes/functions.php';
-if (!isset($_SESSION['admin_id'])) { header('Location: index.php'); exit; }
+include 'inc/header.php';
 
 $message = '';
 $error = '';
 
-// حذف فرم
+// حذف فرم با بررسی دسترسی
 if (isset($_GET['delete'])) {
     $delId = (int)$_GET['delete'];
-    $pdo->prepare("DELETE FROM form_fields WHERE form_id = ?")->execute([$delId]);
-    $pdo->prepare("DELETE FROM form_submissions WHERE form_id = ?")->execute([$delId]);
-    $pdo->prepare("DELETE FROM forms WHERE id = ?")->execute([$delId]);
+    if ($isSuperAdmin) {
+        $pdo->prepare("DELETE FROM form_fields WHERE form_id = ?")->execute([$delId]);
+        $pdo->prepare("DELETE FROM form_submissions WHERE form_id = ?")->execute([$delId]);
+        $pdo->prepare("DELETE FROM forms WHERE id = ?")->execute([$delId]);
+    } else {
+        $chk = $pdo->prepare("SELECT id FROM forms WHERE id = ? AND association_id = ?");
+        $chk->execute([$delId, $adminAssocId]);
+        if ($chk->fetch()) {
+            $pdo->prepare("DELETE FROM form_fields WHERE form_id = ?")->execute([$delId]);
+            $pdo->prepare("DELETE FROM form_submissions WHERE form_id = ?")->execute([$delId]);
+            $pdo->prepare("DELETE FROM forms WHERE id = ? AND association_id = ?")->execute([$delId, $adminAssocId]);
+        }
+    }
     header('Location: forms.php?msg=deleted');
     exit;
 }
@@ -20,7 +26,11 @@ if (isset($_GET['delete'])) {
 // تغییر وضعیت باز/بسته
 if (isset($_GET['toggle'])) {
     $tId = (int)$_GET['toggle'];
-    $pdo->prepare("UPDATE forms SET is_open = 1 - is_open WHERE id = ?")->execute([$tId]);
+    if ($isSuperAdmin) {
+        $pdo->prepare("UPDATE forms SET is_open = 1 - is_open WHERE id = ?")->execute([$tId]);
+    } else {
+        $pdo->prepare("UPDATE forms SET is_open = 1 - is_open WHERE id = ? AND association_id = ?")->execute([$tId, $adminAssocId]);
+    }
     header('Location: forms.php?msg=toggled');
     exit;
 }
@@ -29,7 +39,7 @@ if (isset($_GET['toggle'])) {
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['save_form'])) {
     $id = (int)($_POST['id'] ?? 0);
     $title = trim($_POST['title'] ?? '');
-    $association_id = (int)($_POST['association_id'] ?? 0);
+    $association_id = $isSuperAdmin ? (int)($_POST['association_id'] ?? 0) : $adminAssocId;
     $type = $_POST['type'] ?? 'custom';
     $description = trim($_POST['description'] ?? '');
     $is_open = isset($_POST['is_open']) ? 1 : 0;
@@ -39,8 +49,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['save_form'])) {
         $error = 'عنوان فرم الزامی است.';
     } else {
         if ($id > 0) {
-            $stmt = $pdo->prepare("UPDATE forms SET title = ?, association_id = ?, type = ?, description = ?, is_open = ?, capacity = ? WHERE id = ?");
-            $stmt->execute([$title, $association_id, $type, $description, $is_open, $capacity, $id]);
+            if ($isSuperAdmin) {
+                $stmt = $pdo->prepare("UPDATE forms SET title = ?, association_id = ?, type = ?, description = ?, is_open = ?, capacity = ? WHERE id = ?");
+                $stmt->execute([$title, $association_id, $type, $description, $is_open, $capacity, $id]);
+            } else {
+                $stmt = $pdo->prepare("UPDATE forms SET title = ?, association_id = ?, type = ?, description = ?, is_open = ?, capacity = ? WHERE id = ? AND association_id = ?");
+                $stmt->execute([$title, $adminAssocId, $type, $description, $is_open, $capacity, $id, $adminAssocId]);
+            }
             $formId = $id;
         } else {
             $stmt = $pdo->prepare("INSERT INTO forms (title, association_id, type, description, is_open, capacity) VALUES (?, ?, ?, ?, ?, ?)");
@@ -106,8 +121,13 @@ $edit = null;
 $editFields = [];
 if (isset($_GET['edit'])) {
     $editId = (int)$_GET['edit'];
-    $stmt = $pdo->prepare("SELECT * FROM forms WHERE id = ?");
-    $stmt->execute([$editId]);
+    if ($isSuperAdmin) {
+        $stmt = $pdo->prepare("SELECT * FROM forms WHERE id = ?");
+        $stmt->execute([$editId]);
+    } else {
+        $stmt = $pdo->prepare("SELECT * FROM forms WHERE id = ? AND association_id = ?");
+        $stmt->execute([$editId, $adminAssocId]);
+    }
     $edit = $stmt->fetch();
     if ($edit) {
         $fStmt = $pdo->prepare("SELECT * FROM form_fields WHERE form_id = ? ORDER BY sort_order ASC, id ASC");
@@ -116,18 +136,29 @@ if (isset($_GET['edit'])) {
     }
 }
 
-// لیست انجمن‌ها برای دراپ‌داون
-$assocs = $pdo->query("SELECT id, name FROM associations ORDER BY name ASC")->fetchAll();
+if ($isSuperAdmin) {
+    $assocs = $pdo->query("SELECT id, name FROM associations ORDER BY name ASC")->fetchAll();
+    $forms = $pdo->query("SELECT f.*, a.name AS assoc_name,
+                            (SELECT COUNT(*) FROM form_fields WHERE form_id = f.id) AS field_count,
+                            (SELECT COUNT(*) FROM form_submissions WHERE form_id = f.id) AS sub_count
+                          FROM forms f 
+                          LEFT JOIN associations a ON f.association_id = a.id 
+                          ORDER BY f.id DESC")->fetchAll();
+} else {
+    $assocs = $pdo->prepare("SELECT id, name FROM associations WHERE id = ?");
+    $assocs->execute([$adminAssocId]);
+    $assocs = $assocs->fetchAll();
 
-// لیست تمام فرم‌ها به همراه شمارش فیلدها و ثبت‌نامی‌ها
-$forms = $pdo->query("SELECT f.*, a.name AS assoc_name,
-                        (SELECT COUNT(*) FROM form_fields WHERE form_id = f.id) AS field_count,
-                        (SELECT COUNT(*) FROM form_submissions WHERE form_id = f.id) AS sub_count
-                      FROM forms f 
-                      LEFT JOIN associations a ON f.association_id = a.id 
-                      ORDER BY f.id DESC")->fetchAll();
-
-include 'inc/header.php';
+    $fListStmt = $pdo->prepare("SELECT f.*, a.name AS assoc_name,
+                                  (SELECT COUNT(*) FROM form_fields WHERE form_id = f.id) AS field_count,
+                                  (SELECT COUNT(*) FROM form_submissions WHERE form_id = f.id) AS sub_count
+                                FROM forms f 
+                                LEFT JOIN associations a ON f.association_id = a.id 
+                                WHERE f.association_id = ? 
+                                ORDER BY f.id DESC");
+    $fListStmt->execute([$adminAssocId]);
+    $forms = $fListStmt->fetchAll();
+}
 ?>
 
 <div class="admin-header">
@@ -233,12 +264,14 @@ include 'inc/header.php';
                 <input type="text" name="title" value="<?= e($edit['title'] ?? '') ?>" placeholder="مثلاً: فرم ثبت‌نام وبینار هوش مصنوعی" required>
             </div>
 
-            <div class="form-group">
+            <div class="form-group" <?= !$isSuperAdmin ? 'style="display:none;"' : '' ?>>
                 <label>انجمن مربوطه:</label>
                 <select name="association_id">
-                    <option value="0">دانشگاه اراک (عمومی / بدون انجمن خاص)</option>
+                    <?php if ($isSuperAdmin): ?>
+                        <option value="0">دانشگاه اراک (عمومی / بدون انجمن خاص)</option>
+                    <?php endif; ?>
                     <?php foreach ($assocs as $a): ?>
-                        <option value="<?= (int)$a['id'] ?>" <?= (!empty($edit['association_id']) && $edit['association_id'] == $a['id']) ? 'selected' : '' ?>>
+                        <option value="<?= (int)$a['id'] ?>" <?= (!empty($edit['association_id']) && $edit['association_id'] == $a['id']) ? 'selected' : (!$isSuperAdmin ? 'selected' : '') ?>>
                             <?= e($a['name']) ?>
                         </option>
                     <?php endforeach; ?>

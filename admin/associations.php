@@ -4,12 +4,13 @@ require_once __DIR__ . '/../includes/db.php';
 require_once __DIR__ . '/../includes/functions.php';
 require_once __DIR__ . '/../includes/icons.php';
 
-if (!isset($_SESSION['admin_id'])) { header('Location: index.php'); exit; }
-$msg = '';
+include 'inc/header.php';
 
-// حذف
+// حذف فقط توسط مدیر ارشد مجاز است
 if (isset($_GET['delete'])) {
-    $pdo->prepare("DELETE FROM associations WHERE id=?")->execute([(int)$_GET['delete']]);
+    if ($isSuperAdmin) {
+        $pdo->prepare("DELETE FROM associations WHERE id=?")->execute([(int)$_GET['delete']]);
+    }
     header('Location: associations.php'); exit;
 }
 
@@ -27,7 +28,9 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     $website = trim($_POST['website'] ?? '');
     $address = trim($_POST['address'] ?? '');
     $membership_open = isset($_POST['membership_open']) ? 1 : 0;
-    $id = (int)($_POST['id'] ?? 0);
+    
+    // اگر دبیر باشد، شناسه فقط انجمن خودش خواهد بود
+    $id = $isSuperAdmin ? (int)($_POST['id'] ?? 0) : $adminAssocId;
     
     // آپلود کاور
     $cover = $_POST['current_cover'] ?? '';
@@ -44,7 +47,8 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
             $email, $phone, $telegram, $instagram, $linkedin, $website, $address, $membership_open,
             $id
         ]);
-    } else {
+        $msg = 'اطلاعات و کاور انجمن با موفقیت به‌روزرسانی شد.';
+    } elseif ($isSuperAdmin) {
         $stmt = $pdo->prepare("INSERT INTO associations 
             (name, description, goals, icon_key, cover_image, email, phone, telegram, instagram, linkedin, website, address, membership_open) 
             VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?)");
@@ -52,27 +56,42 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
             $name, $desc, $goals, $icon_key, $cover,
             $email, $phone, $telegram, $instagram, $linkedin, $website, $address, $membership_open
         ]);
+        $msg = 'انجمن جدید با موفقیت ایجاد شد.';
     }
-    header('Location: associations.php'); exit;
 }
 
-// ویرایش
+// واکشی اطلاعات
 $edit = null;
-if (isset($_GET['edit'])) {
+if (!$isSuperAdmin) {
+    // دبیر همیشه انجمن خودش را ویرایش می‌کند
+    $stmt = $pdo->prepare("SELECT * FROM associations WHERE id=?");
+    $stmt->execute([$adminAssocId]);
+    $edit = $stmt->fetch();
+} elseif (isset($_GET['edit'])) {
     $stmt = $pdo->prepare("SELECT * FROM associations WHERE id=?");
     $stmt->execute([(int)$_GET['edit']]);
     $edit = $stmt->fetch();
 }
 
-$list = $pdo->query("SELECT * FROM associations ORDER BY id DESC")->fetchAll();
+$list = $isSuperAdmin ? $pdo->query("SELECT * FROM associations ORDER BY id DESC")->fetchAll() : [];
 $catalog = assocIconCatalog();
+?>
 
-include 'inc/header.php'; ?>
+<div class="admin-header">
+    <h2><?= $isSuperAdmin ? 'مدیریت انجمن‌های علمی دانشگاه' : ('مشخصات و هدر: ' . htmlspecialchars($edit['name'] ?? 'انجمن علمی')) ?></h2>
+    <?php if (!$isSuperAdmin && $adminAssocId > 0): ?>
+        <a href="../association.php?id=<?= $adminAssocId ?>" target="_blank" class="btn btn-sm btn-secondary">
+            <?= svgIcon('eye', '', 14) ?> مشاهده صفحه در سایت
+        </a>
+    <?php endif; ?>
+</div>
 
-<div class="admin-header"><h2>مدیریت انجمن‌ها</h2></div>
+<?php if (!empty($msg)): ?>
+    <div class="alert alert-success"><?= $msg ?></div>
+<?php endif; ?>
 
 <div class="admin-card">
-    <h3><?= $edit ? 'ویرایش اطلاعات انجمن' : 'افزودن انجمن جدید' ?></h3>
+    <h3><?= $edit ? ($isSuperAdmin ? 'ویرایش اطلاعات انجمن' : 'ویرایش مشخصات و کاور هدر انجمن') : 'افزودن انجمن جدید' ?></h3>
     <form method="POST" enctype="multipart/form-data">
         <input type="hidden" name="id" value="<?= $edit['id'] ?? '' ?>">
         <input type="hidden" name="current_cover" value="<?= $edit['cover_image'] ?? '' ?>">
@@ -154,6 +173,7 @@ include 'inc/header.php'; ?>
     </form>
 </div>
 
+<?php if ($isSuperAdmin): ?>
 <div class="admin-card">
     <h3>لیست انجمن‌های علمی (<?= count($list) ?>)</h3>
     <table>
@@ -190,5 +210,6 @@ include 'inc/header.php'; ?>
         <?php endforeach; ?>
     </table>
 </div>
+<?php endif; ?>
 
 <?php include 'inc/footer.php'; ?>

@@ -4,6 +4,9 @@ require_once __DIR__ . '/../includes/db.php';
 require_once __DIR__ . '/../includes/functions.php';
 if (!isset($_SESSION['admin_id'])) { header('Location: index.php'); exit; }
 
+$isSuperAdmin = (!empty($_SESSION['admin_role']) && $_SESSION['admin_role'] === 'superadmin') || empty($_SESSION['admin_role']);
+$adminAssocId = (int)($_SESSION['admin_assoc_id'] ?? 0);
+
 $formId = (int)($_GET['form_id'] ?? 0);
 $statusFilter = $_GET['status'] ?? '';
 $search = trim($_GET['q'] ?? '');
@@ -14,7 +17,15 @@ if (isset($_GET['action']) && isset($_GET['sub_id'])) {
     $act = $_GET['action'];
     if (in_array($act, ['approve', 'reject', 'new'])) {
         $st = ($act === 'approve') ? 'approved' : (($act === 'reject') ? 'rejected' : 'new');
-        $pdo->prepare("UPDATE form_submissions SET status = ? WHERE id = ?")->execute([$st, $subId]);
+        if ($isSuperAdmin) {
+            $pdo->prepare("UPDATE form_submissions SET status = ? WHERE id = ?")->execute([$st, $subId]);
+        } else {
+            $chk = $pdo->prepare("SELECT s.id FROM form_submissions s JOIN forms f ON s.form_id = f.id WHERE s.id = ? AND f.association_id = ?");
+            $chk->execute([$subId, $adminAssocId]);
+            if ($chk->fetch()) {
+                $pdo->prepare("UPDATE form_submissions SET status = ? WHERE id = ?")->execute([$st, $subId]);
+            }
+        }
         header("Location: submissions.php?form_id=$formId&status=$statusFilter&q=" . urlencode($search) . "&msg=status_updated");
         exit;
     }
@@ -23,7 +34,15 @@ if (isset($_GET['action']) && isset($_GET['sub_id'])) {
 // عملیات حذف
 if (isset($_GET['delete'])) {
     $delId = (int)$_GET['delete'];
-    $pdo->prepare("DELETE FROM form_submissions WHERE id = ?")->execute([$delId]);
+    if ($isSuperAdmin) {
+        $pdo->prepare("DELETE FROM form_submissions WHERE id = ?")->execute([$delId]);
+    } else {
+        $chk = $pdo->prepare("SELECT s.id FROM form_submissions s JOIN forms f ON s.form_id = f.id WHERE s.id = ? AND f.association_id = ?");
+        $chk->execute([$delId, $adminAssocId]);
+        if ($chk->fetch()) {
+            $pdo->prepare("DELETE FROM form_submissions WHERE id = ?")->execute([$delId]);
+        }
+    }
     header("Location: submissions.php?form_id=$formId&status=$statusFilter&q=" . urlencode($search) . "&msg=deleted");
     exit;
 }
@@ -32,6 +51,10 @@ if (isset($_GET['delete'])) {
 if (isset($_GET['export']) && $_GET['export'] === 'csv') {
     $where = ["1=1"];
     $params = [];
+    if (!$isSuperAdmin) {
+        $where[] = "f.association_id = ?";
+        $params[] = $adminAssocId;
+    }
     if ($formId > 0) {
         $where[] = "s.form_id = ?";
         $params[] = $formId;
@@ -105,6 +128,10 @@ if (isset($_GET['export']) && $_GET['export'] === 'csv') {
 $where = ["1=1"];
 $params = [];
 
+if (!$isSuperAdmin) {
+    $where[] = "f.association_id = ?";
+    $params[] = $adminAssocId;
+}
 if ($formId > 0) {
     $where[] = "s.form_id = ?";
     $params[] = $formId;
@@ -128,15 +155,26 @@ $stmt = $pdo->prepare($sql);
 $stmt->execute($params);
 $submissions = $stmt->fetchAll();
 
-// لیست تمام فرم‌ها برای فیلتر
-$allForms = $pdo->query("SELECT id, title FROM forms ORDER BY id DESC")->fetchAll();
+// لیست فرم‌ها برای فیلتر
+if ($isSuperAdmin) {
+    $allForms = $pdo->query("SELECT id, title FROM forms ORDER BY id DESC")->fetchAll();
+} else {
+    $fStmt = $pdo->prepare("SELECT id, title FROM forms WHERE association_id = ? ORDER BY id DESC");
+    $fStmt->execute([$adminAssocId]);
+    $allForms = $fStmt->fetchAll();
+}
 
 // مشاهده جزئیات یک پاسخ خاص
 $viewSub = null;
 if (isset($_GET['view'])) {
     $viewId = (int)$_GET['view'];
-    $vStmt = $pdo->prepare("SELECT s.*, f.title AS form_title FROM form_submissions s LEFT JOIN forms f ON s.form_id = f.id WHERE s.id = ?");
-    $vStmt->execute([$viewId]);
+    if ($isSuperAdmin) {
+        $vStmt = $pdo->prepare("SELECT s.*, f.title AS form_title FROM form_submissions s LEFT JOIN forms f ON s.form_id = f.id WHERE s.id = ?");
+        $vStmt->execute([$viewId]);
+    } else {
+        $vStmt = $pdo->prepare("SELECT s.*, f.title AS form_title FROM form_submissions s LEFT JOIN forms f ON s.form_id = f.id WHERE s.id = ? AND f.association_id = ?");
+        $vStmt->execute([$viewId, $adminAssocId]);
+    }
     $viewSub = $vStmt->fetch();
 }
 

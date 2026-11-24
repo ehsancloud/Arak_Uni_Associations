@@ -25,7 +25,9 @@ if (isset($_GET['export'])) {
 $list = $pdo->query("SELECT * FROM festival_registrations ORDER BY id DESC")->fetchAll();
 $status = $pdo->query("SELECT festival_status FROM settings WHERE id=1")->fetchColumn();
 
-include 'inc/header.php'; ?>
+include 'inc/header.php';
+requireSuperAdmin();
+?>
 
 <div class="admin-header">
     <h2>ثبت‌نامی‌های کادر اجرایی جشنواره حرکت</h2>

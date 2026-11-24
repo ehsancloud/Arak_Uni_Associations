@@ -130,3 +130,9 @@ INSERT INTO `ticker_items` (`id`, `association_id`, `text`, `link`, `sort_order`
 (4, 1, 'برگزاری کارگاه آشنایی با یادگیری ماشین', 'news_view.php?id=6', 1, 1),
 (5, 1, 'موفقیت تیم دانشگاه اراک در مسابقات هوش مصنوعی', 'news_view.php?id=8', 2, 1),
 (6, 1, 'فراخوان مقاله همایش ملی هوش مصنوعی', 'news_view.php?id=7', 3, 1);
+
+-- ۱۱. کاربران و دبیران اولیه سامانه
+INSERT INTO `admins` (`id`, `username`, `password`, `role`, `association_id`, `full_name`) VALUES
+(1, 'admin', 'e10adc3949ba59abbe56e057f20f883e', 'superadmin', NULL, 'مدیر کل سامانه'),
+(2, 'sec_ai', 'e10adc3949ba59abbe56e057f20f883e', 'secretary', 1, 'دبیر انجمن هوش مصنوعی')
+ON DUPLICATE KEY UPDATE `username` = VALUES(`username`);
