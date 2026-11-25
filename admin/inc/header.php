@@ -7,20 +7,50 @@ require_once __DIR__ . '/auth.php';
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>پنل مدیریت سامانه | دانشگاه اراک</title>
-    <link rel="stylesheet" href="inc/admin-style.css">
+    <link rel="stylesheet" href="inc/admin-style.css?v=<?= file_exists(__DIR__ . '/admin-style.css') ? filemtime(__DIR__ . '/admin-style.css') : '2.1' ?>">
 </head>
 <body>
 
 <?php if (isset($_SESSION['admin_id'])): ?>
-<aside class="admin-sidebar">
-    <div class="sidebar-brand">
-        <img src="../assets/images/logo-white.svg" alt="دانشگاه اراک" style="width:36px;height:36px;object-fit:contain;">
-        <div>
-            <h2 style="font-size:15px; margin:0; line-height:1.3;">پنل مدیریت</h2>
-            <?php if (!$isSuperAdmin && $currentAssocName): ?>
-                <span style="font-size:11.5px; color:#93c5fd; display:block; margin-top:3px;"><?= htmlspecialchars($currentAssocName) ?></span>
-            <?php endif; ?>
+<!-- نوار بالای موبایل برای پنل ادمین -->
+<header class="admin-mobile-topbar">
+    <div style="display:flex; align-items:center; gap:10px;">
+        <button type="button" class="admin-menu-toggle" id="adminSidebarToggle" aria-label="منوی مدیریت" aria-expanded="false">
+            <?= svgIcon('menu', '', 22) ?>
+        </button>
+        <div class="admin-mobile-brand">
+            <img src="../assets/images/logo-white.svg" alt="دانشگاه اراک" class="admin-mobile-logo">
+            <div class="admin-mobile-titles">
+                <span class="admin-mobile-title">پنل مدیریت</span>
+                <?php if (!$isSuperAdmin && $currentAssocName): ?>
+                    <span class="admin-mobile-assoc"><?= htmlspecialchars($currentAssocName) ?></span>
+                <?php endif; ?>
+            </div>
         </div>
+    </div>
+    <div class="admin-mobile-actions">
+        <a href="index.php?logout=1" class="admin-mobile-logout-btn" title="خروج از حساب" aria-label="خروج">
+            <?= svgIcon('close', '', 18) ?>
+        </a>
+    </div>
+</header>
+
+<div class="admin-sidebar-overlay" id="adminSidebarOverlay"></div>
+
+<aside class="admin-sidebar" id="adminSidebar">
+    <div class="sidebar-brand">
+        <div class="sidebar-brand-inner">
+            <img src="../assets/images/logo-white.svg" alt="دانشگاه اراک" style="width:34px;height:34px;object-fit:contain;">
+            <div>
+                <h2 style="font-size:15px; margin:0; line-height:1.3;">پنل مدیریت</h2>
+                <?php if (!$isSuperAdmin && $currentAssocName): ?>
+                    <span style="font-size:11.5px; color:#93c5fd; display:block; margin-top:3px;"><?= htmlspecialchars($currentAssocName) ?></span>
+                <?php endif; ?>
+            </div>
+        </div>
+        <button type="button" class="sidebar-close-btn" id="adminSidebarClose" aria-label="بستن منو">
+            <?= svgIcon('close', '', 18) ?>
+        </button>
     </div>
     <ul class="sidebar-nav">
         <li>

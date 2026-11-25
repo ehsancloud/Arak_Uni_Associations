@@ -108,12 +108,12 @@ $nav = [
         </button>
 
         <a href="index.php" class="logo-box">
+            <div class="logo-icon-wrap">
+                <img src="assets/images/logo.svg" alt="دانشگاه اراک" class="logo-img">
+            </div>
             <div class="logo-text">
                 <span class="logo-title">دانشگاه اراک</span>
                 <span class="logo-sub">سامانه خبری انجمن‌های علمی</span>
-            </div>
-            <div class="logo-icon-wrap">
-                <img src="assets/images/logo.svg" alt="دانشگاه اراک" class="logo-img">
             </div>
         </a>
 
