@@ -1,4 +1,5 @@
-include 'inc/header.php';
+<?php
+require_once __DIR__ . '/inc/auth.php';
 
 $message = '';
 $error = '';
@@ -113,6 +114,8 @@ $sql = "SELECT p.*, a.name AS assoc_name
 $stmt = $pdo->prepare($sql);
 $stmt->execute($params);
 $pubsList = $stmt->fetchAll();
+
+include 'inc/header.php';
 ?>
 
 <div class="admin-header">

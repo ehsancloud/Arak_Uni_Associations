@@ -1,11 +1,5 @@
 <?php
-if (session_status() === PHP_SESSION_NONE) { session_start(); }
-require_once __DIR__ . '/../includes/db.php';
-require_once __DIR__ . '/../includes/functions.php';
-if (!isset($_SESSION['admin_id'])) { header('Location: index.php'); exit; }
-
-$isSuperAdmin = (!empty($_SESSION['admin_role']) && $_SESSION['admin_role'] === 'superadmin') || empty($_SESSION['admin_role']);
-$adminAssocId = (int)($_SESSION['admin_assoc_id'] ?? 0);
+require_once __DIR__ . '/inc/auth.php';
 
 $formId = (int)($_GET['form_id'] ?? 0);
 $statusFilter = $_GET['status'] ?? '';

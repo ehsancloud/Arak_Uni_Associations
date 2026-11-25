@@ -1,4 +1,5 @@
-include 'inc/header.php';
+<?php
+require_once __DIR__ . '/inc/auth.php';
 
 // حذف خبر با کنترل دسترسی
 if (isset($_GET['delete'])) {
@@ -61,6 +62,8 @@ if ($isSuperAdmin) {
     $nStmt->execute([$adminAssocId]);
     $news_list = $nStmt->fetchAll();
 }
+
+include 'inc/header.php';
 ?>
 
 <div class="admin-header">

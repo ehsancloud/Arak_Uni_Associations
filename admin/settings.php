@@ -1,7 +1,6 @@
 <?php
-if (session_status() === PHP_SESSION_NONE) { session_start(); }
-require_once __DIR__ . '/../includes/db.php';
-if (!isset($_SESSION['admin_id'])) { header('Location: index.php'); exit; }
+require_once __DIR__ . '/inc/auth.php';
+requireSuperAdmin();
 
 $msg = '';
 if ($_SERVER['REQUEST_METHOD'] == 'POST') {
@@ -25,7 +24,6 @@ $stmt = $pdo->query("SELECT * FROM settings WHERE id=1");
 $s = $stmt->fetch();
 
 include 'inc/header.php';
-requireSuperAdmin();
 ?>
 
 <div class="admin-header"><h2>تنظیمات سایت</h2></div>

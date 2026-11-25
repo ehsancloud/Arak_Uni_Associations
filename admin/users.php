@@ -1,10 +1,5 @@
 <?php
-if (session_status() === PHP_SESSION_NONE) { session_start(); }
-require_once __DIR__ . '/../includes/db.php';
-require_once __DIR__ . '/../includes/functions.php';
-if (!isset($_SESSION['admin_id'])) { header('Location: index.php'); exit; }
-
-include 'inc/header.php';
+require_once __DIR__ . '/inc/auth.php';
 requireSuperAdmin();
 
 $message = '';
@@ -83,6 +78,8 @@ $users = $pdo->query("SELECT u.*, a.name AS assoc_name
                       FROM admins u 
                       LEFT JOIN associations a ON u.association_id = a.id 
                       ORDER BY u.id ASC")->fetchAll();
+
+include 'inc/header.php';
 ?>
 
 <div class="admin-header">

@@ -1,7 +1,6 @@
 <?php
-if (session_status() === PHP_SESSION_NONE) { session_start(); }
-require_once __DIR__ . '/../includes/db.php';
-if (!isset($_SESSION['admin_id'])) { header('Location: index.php'); exit; }
+require_once __DIR__ . '/inc/auth.php';
+requireSuperAdmin();
 
 if (isset($_GET['delete'])) {
     $pdo->prepare("DELETE FROM festival_registrations WHERE id=?")->execute([(int)$_GET['delete']]);
@@ -26,7 +25,6 @@ $list = $pdo->query("SELECT * FROM festival_registrations ORDER BY id DESC")->fe
 $status = $pdo->query("SELECT festival_status FROM settings WHERE id=1")->fetchColumn();
 
 include 'inc/header.php';
-requireSuperAdmin();
 ?>
 
 <div class="admin-header">

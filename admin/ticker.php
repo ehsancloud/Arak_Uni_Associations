@@ -1,8 +1,6 @@
 <?php
-if (session_status() === PHP_SESSION_NONE) { session_start(); }
-require_once __DIR__ . '/../includes/db.php';
-require_once __DIR__ . '/../includes/functions.php';
-if (!isset($_SESSION['admin_id'])) { header('Location: index.php'); exit; }
+require_once __DIR__ . '/inc/auth.php';
+requireSuperAdmin();
 
 if (isset($_GET['delete'])) {
     $pdo->prepare("DELETE FROM ticker_items WHERE id=?")->execute([(int)$_GET['delete']]);
@@ -44,7 +42,6 @@ $assocs = $pdo->query("SELECT * FROM associations ORDER BY name")->fetchAll();
 $list = $pdo->query("SELECT t.*, a.name AS assoc_name FROM ticker_items t LEFT JOIN associations a ON t.association_id=a.id ORDER BY t.association_id, t.sort_order, t.id DESC")->fetchAll();
 
 include 'inc/header.php';
-requireSuperAdmin();
 ?>
 
 <div class="admin-header"><h2>مدیریت نوار «آخرین اخبار»</h2></div>

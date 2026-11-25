@@ -1,4 +1,5 @@
-include 'inc/header.php';
+<?php
+require_once __DIR__ . '/inc/auth.php';
 
 $message = '';
 $error = '';
@@ -122,6 +123,8 @@ if ($isSuperAdmin) {
     $evStmt->execute([$adminAssocId]);
     $events = $evStmt->fetchAll();
 }
+
+include 'inc/header.php';
 ?>
 
 <div class="admin-header">
