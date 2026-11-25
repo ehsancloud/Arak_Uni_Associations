@@ -24,40 +24,81 @@ $nav = [
     <link rel="stylesheet" href="assets/css/style.css?v=<?= file_exists(__DIR__ . '/../assets/css/style.css') ? filemtime(__DIR__ . '/../assets/css/style.css') : '3.0' ?>">
 <body>
 
-<!-- اسکلتون لودینگ صفحه (Skeleton Screen Loader) -->
+<!-- اسکلتون لودینگ واکنش‌گرا و سبک صفحه (Responsive Skeleton Screen) -->
 <div id="pageSkeleton" class="page-skeleton-overlay" aria-hidden="true">
-    <div class="skeleton-header-wrap">
-        <div style="display:flex; align-items:center; gap:12px;">
-            <div class="skeleton-shimmer" style="width:40px; height:40px; border-radius:50%;"></div>
-            <div style="display:flex; flex-direction:column; gap:6px;">
-                <div class="skeleton-shimmer" style="width:110px; height:14px;"></div>
-                <div class="skeleton-shimmer" style="width:75px; height:10px;"></div>
+    <div class="skeleton-header">
+        <div class="container skeleton-header-inner">
+            <div class="skeleton-mobile-btn skeleton-shimmer"></div>
+            <div class="skeleton-brand">
+                <div class="skeleton-logo skeleton-shimmer"></div>
+                <div class="skeleton-brand-text">
+                    <div class="skeleton-title-line skeleton-shimmer"></div>
+                    <div class="skeleton-sub-line skeleton-shimmer"></div>
+                </div>
+            </div>
+            <div class="skeleton-desktop-nav">
+                <div class="skeleton-nav-item skeleton-shimmer"></div>
+                <div class="skeleton-nav-item skeleton-shimmer"></div>
+                <div class="skeleton-nav-item skeleton-shimmer"></div>
+                <div class="skeleton-nav-item skeleton-shimmer"></div>
+            </div>
+            <div class="skeleton-search-wrap">
+                <div class="skeleton-search-box skeleton-shimmer"></div>
             </div>
         </div>
-        <div style="display:flex; gap:16px;">
-            <div class="skeleton-shimmer" style="width:65px; height:12px;"></div>
-            <div class="skeleton-shimmer" style="width:65px; height:12px;"></div>
-            <div class="skeleton-shimmer" style="width:65px; height:12px;"></div>
-            <div class="skeleton-shimmer" style="width:65px; height:12px;"></div>
-        </div>
-        <div class="skeleton-shimmer" style="width:140px; height:36px; border-radius:20px;"></div>
     </div>
-    <div class="skeleton-hero-wrap">
-        <div class="skeleton-shimmer" style="width:280px; height:28px;"></div>
-        <div class="skeleton-shimmer" style="width:400px; height:16px;"></div>
-        <div class="skeleton-shimmer" style="width:340px; height:16px;"></div>
-        <div style="display:flex; gap:12px; margin-top:12px;">
-            <div class="skeleton-shimmer" style="width:120px; height:38px; border-radius:8px;"></div>
-            <div class="skeleton-shimmer" style="width:120px; height:38px; border-radius:8px;"></div>
+    <div class="skeleton-hero">
+        <div class="container skeleton-hero-inner">
+            <div class="skeleton-hero-title skeleton-shimmer"></div>
+            <div class="skeleton-hero-desc skeleton-shimmer"></div>
+            <div class="skeleton-hero-desc-short skeleton-shimmer"></div>
+            <div class="skeleton-hero-buttons">
+                <div class="skeleton-btn skeleton-shimmer"></div>
+                <div class="skeleton-btn skeleton-shimmer"></div>
+            </div>
         </div>
     </div>
-    <div class="skeleton-content-grid">
-        <div class="skeleton-shimmer" style="height:180px; border-radius:12px;"></div>
-        <div class="skeleton-shimmer" style="height:180px; border-radius:12px;"></div>
-        <div class="skeleton-shimmer" style="height:180px; border-radius:12px;"></div>
-        <div class="skeleton-shimmer" style="height:180px; border-radius:12px;"></div>
+    <div class="container skeleton-body">
+        <div class="skeleton-cards-grid">
+            <div class="skeleton-card">
+                <div class="skeleton-card-img skeleton-shimmer"></div>
+                <div class="skeleton-card-line skeleton-shimmer"></div>
+                <div class="skeleton-card-sub skeleton-shimmer"></div>
+            </div>
+            <div class="skeleton-card">
+                <div class="skeleton-card-img skeleton-shimmer"></div>
+                <div class="skeleton-card-line skeleton-shimmer"></div>
+                <div class="skeleton-card-sub skeleton-shimmer"></div>
+            </div>
+            <div class="skeleton-card">
+                <div class="skeleton-card-img skeleton-shimmer"></div>
+                <div class="skeleton-card-line skeleton-shimmer"></div>
+                <div class="skeleton-card-sub skeleton-shimmer"></div>
+            </div>
+        </div>
     </div>
 </div>
+<script>
+(function() {
+    var sk = document.getElementById('pageSkeleton');
+    if (!sk) return;
+    function hideSk() {
+        if (!sk.classList.contains('hidden')) {
+            sk.classList.add('hidden');
+            setTimeout(function() {
+                if (sk && sk.parentNode) sk.parentNode.removeChild(sk);
+            }, 350);
+        }
+    }
+    if (document.readyState === 'complete' || document.readyState === 'interactive') {
+        setTimeout(hideSk, 100);
+    } else {
+        document.addEventListener('DOMContentLoaded', hideSk);
+        window.addEventListener('load', hideSk);
+    }
+    setTimeout(hideSk, 450);
+})();
+</script>
 
 <header class="main-header" id="mainHeader">
     <div class="container header-flex">

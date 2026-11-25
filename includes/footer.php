@@ -38,6 +38,6 @@
     </div>
 </footer>
 
-<script src="assets/js/scripts.js"></script>
+<script src="assets/js/scripts.js?v=<?= file_exists(__DIR__ . '/../assets/js/scripts.js') ? filemtime(__DIR__ . '/../assets/js/scripts.js') : '3.1' ?>"></script>
 </body>
 </html>

@@ -93,14 +93,16 @@ document.addEventListener('DOMContentLoaded', () => {
                     if (skeleton.parentNode) {
                         skeleton.parentNode.removeChild(skeleton);
                     }
-                }, 400);
+                }, 350);
             }
         };
 
-        // حذف اسکلتون هنگام لود کامل صفحه
-        window.addEventListener('load', dismissSkeleton);
-        // سقف زمانی حداکثر ۶۵۰ میلی‌ثانیه
-        setTimeout(dismissSkeleton, 650);
+        if (document.readyState === 'complete' || document.readyState === 'interactive') {
+            dismissSkeleton();
+        } else {
+            window.addEventListener('load', dismissSkeleton);
+        }
+        setTimeout(dismissSkeleton, 400);
     }
 
 });
