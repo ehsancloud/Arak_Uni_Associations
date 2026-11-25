@@ -22,6 +22,7 @@ $nav = [
     <meta name="description" content="سامانه جامع خبری و اطلاع‌رسانی انجمن‌های علمی دانشگاه اراک">
     <link rel="preload" href="assets/fonts/YekanBakhFaNum-Regular.woff2" as="font" type="font/woff2" crossorigin>
     <link rel="stylesheet" href="assets/css/style.css?v=<?= file_exists(__DIR__ . '/../assets/css/style.css') ? filemtime(__DIR__ . '/../assets/css/style.css') : '3.0' ?>">
+</head>
 <body>
 
 <!-- اسکلتون لودینگ واکنش‌گرا و سبک صفحه (Responsive Skeleton Screen) -->

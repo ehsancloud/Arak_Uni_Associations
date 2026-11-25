@@ -1558,7 +1558,7 @@ button, input, select, textarea {
         background: #f1f3f6;
     }
     .page-skeleton-overlay {
-        animation: none;
+        display: none !important;
     }
 }
 
